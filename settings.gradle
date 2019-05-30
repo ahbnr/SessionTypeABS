@@ -1,0 +1,4 @@
+/*
+include ':abstools'
+project(':abstools').projectDir = file('../abstools/frontend')
+*/

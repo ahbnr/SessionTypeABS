@@ -1,0 +1,35 @@
+plugins {
+  id 'java'
+  id "org.jetbrains.kotlin.jvm" version "1.3.31"
+  id 'application'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+version = '0.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+  //implementation project('abstools')
+  implementation files('../abstools/frontend/dist/absfrontend.jar')
+}
+
+sourceSets {
+  main.kotlin.srcDirs += 'src/main/kotlin'
+  main.java.srcDirs += 'src/main/java'
+}
+
+application {
+  mainClassName = 'session_type_abs.SessionTypeABS'
+}
+
+run {
+  if (project.hasProperty('runArgs')) {
+    args findProperty('runArgs')
+  }
+}

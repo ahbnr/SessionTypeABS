@@ -1,0 +1,39 @@
+module Test;
+
+import * from ABS.Scheduler;
+
+interface I {
+  Unit m1();
+  Unit m2();
+}
+
+class C implements I {
+  Int q = 0;
+
+  Unit m1() {
+    case q {
+      0 => q=1;
+      _ => assert(False);
+    }
+
+    println("m1");
+  }
+
+  Unit m2() {
+    case q {
+      1 => q=2;
+      _ => assert(False);
+    }
+
+    println("m2");
+  }
+}
+
+{
+  I o = new C();
+  
+  Fut<Any> f2 = o!m2();
+  Fut<Any> f1 = o!m1();
+
+  await f1? & f2?;
+}

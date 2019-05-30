@@ -1,0 +1,56 @@
+module SessionTypeABS.SchedulerHelpers;
+
+import * from ABS.Scheduler;
+
+export safeHead, blacklistMethods, selectAsideBlacklist, forceInit, applyProtocol, matchNamesOrRegisters;
+
+def Maybe<T> safeHead<T>(List<T> l) =
+  case l {
+    Cons(x, _) => Just(x);
+    Nil => Nothing;
+  };
+
+def Maybe<Process> forceInit(schedulerFun)(List<Process> queue) =
+  case safeHead(filter((Process p) => method(p) == ".init")(queue)) {
+    Just(p) => Just(p);
+    Nothing => schedulerFun(queue);
+  };
+
+def List<Process> blacklistMethods(Set<String> blacklist, List<Process> queue) =
+  filter((Process p) => !contains(blacklist, method(p)))(queue);
+
+def List<Process> whitelistMethods(Set<String> whitelist, List<Process> queue) =
+  filter((Process p) => contains(whitelist, method(p)))(queue);
+
+def Maybe<Process> selectAsideBlacklist(Set<String> blacklist, List<Process> queue) =
+  safeHead(blacklistMethods(blacklist, queue));
+
+def Maybe<Process> selectFromWhitelist(Set<String> whitelist, List<Process> queue) =
+  safeHead(whitelistMethods(whitelist, queue));
+
+type Register = Maybe<Fut<Any>>;
+
+def Maybe<Process> matchRegister(Register r, List<Process> queue) =
+  case r {
+    Just(f) => safeHead(filter((Process p) => destiny(p) == f)(queue));
+    _ => Nothing;
+  };
+
+def Maybe<Process> matchNamesOrRegisters(Set<String> whitelist, Set<Register> registers, List<Process> queue) =
+  safeHead(
+    filter((Process p) =>
+         contains(whitelist, method(p))
+      || contains(registers, Just(destiny(p)))) (queue)
+  );
+
+def Maybe<Process> applyProtocol(protocolFun)(Set<String> participants, List<Process> queue) =
+  forceInit(
+    (List<Process> queue) =>
+      let
+        Maybe<Process> protocolChoice = protocolFun(queue)
+      in
+        case protocolChoice {
+          Nothing => selectAsideBlacklist(participants, queue);
+          _ => protocolChoice;
+        }
+  )(queue);
