@@ -2,6 +2,13 @@ package session_type_abs
 
 import org.abs_models.frontend.ast.*;
 
+// Types
+fun registerT() = 
+  UnresolvedTypeUse(
+    "SessionTypeABS.SchedulerHelpers.Register",
+    List() //Annotations
+  )
+
 // Common parameters
 fun queueParameter() =
   ParamDecl(
@@ -17,6 +24,17 @@ fun stateParameter() =
     List() // Annotations
   )
 
+fun registerParameters(automaton: SessionAutomaton) =
+  registerNames(automaton)
+    .map{registerName ->
+      ParamDecl(
+        registerName,
+        registerT(),
+        List() // Annotations
+      )
+    }
+    .toTypedArray()
+
 fun processParameter() =
   ParamDecl(
     "p",
@@ -28,10 +46,10 @@ fun processParameter() =
 
 fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>) =
   FnApp(
-    "matchNamesOrRegisters",
+    "SessionTypeABS.SchedulerHelpers.matchNamesOrRegisters",
     List(
       setC(*whitelist.map{methodName -> StringLiteral(methodName)}.toTypedArray()),
-      setC(*registers.map{register -> IntLiteral(register.toString())}.toTypedArray()),
+      setC(*registers.map{register -> VarUse(registerName(register))}.toTypedArray()),
       VarUse("queue")
     )
   )

@@ -2,7 +2,7 @@ module SessionTypeABS.SchedulerHelpers;
 
 import * from ABS.Scheduler;
 
-export safeHead, blacklistMethods, selectAsideBlacklist, forceInit, applyProtocol, matchNamesOrRegisters;
+export Register, safeHead, blacklistMethods, selectAsideBlacklist, forceInit, applyProtocol, matchNamesOrRegisters;
 
 def Maybe<T> safeHead<T>(List<T> l) =
   case l {

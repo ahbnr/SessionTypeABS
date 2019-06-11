@@ -21,7 +21,7 @@ fun listT(param: TypeUse) =
   )
 
 fun intT() =
-  DataTypeUse(
+  DataTypeUse( // TODO: Using UnknownTypeUse would probably be better
     "Int",
     List() // Annotations
   )
@@ -35,6 +35,9 @@ fun nothingC() =
 
 fun trueC() =
   DataConstructorExp("True", List())
+
+fun falseC() =
+  DataConstructorExp("False", List())
 
 fun nilC() =
   DataConstructorExp("Nil", List())

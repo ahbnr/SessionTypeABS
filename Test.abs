@@ -8,23 +8,11 @@ interface I {
 }
 
 class C implements I {
-  Int q = 0;
-
   Unit m1() {
-    case q {
-      0 => q=1;
-      _ => assert(False);
-    }
-
     println("m1");
   }
 
   Unit m2() {
-    case q {
-      1 => q=2;
-      _ => assert(False);
-    }
-
     println("m2");
   }
 }

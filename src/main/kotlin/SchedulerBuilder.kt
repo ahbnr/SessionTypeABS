@@ -41,7 +41,11 @@ fun scheduler(name: String, automaton: SessionAutomaton) =
   funDecl(
     maybeT(processT()),
     name,
-    List(queueParameter(), stateParameter()),
+    List(
+      queueParameter(),
+      stateParameter(),
+      *registerParameters(automaton)
+    ),
     applyProtocol(
       lambdaDecl(
         List(queueParameter()),

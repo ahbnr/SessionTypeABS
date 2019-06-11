@@ -1,7 +1,7 @@
 .PHONY: all run
 
 all:
-	./gradlew build
+	./gradlew --console=rich build
 
 run:
-	./gradlew run
+	./gradlew --console=rich run

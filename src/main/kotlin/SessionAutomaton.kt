@@ -3,7 +3,8 @@ package session_type_abs
 // data TransitionVerb = InvocREv String register | ReactEv ...
 sealed class TransitionVerb {
   class InvocREv(
-    val method: String
+    val method: String,
+    val register: Int
   ): TransitionVerb();
 
   class ReactEv(
@@ -33,5 +34,15 @@ class SessionAutomaton(
       .map{t -> t.verb}
       .filterIsInstance<TransitionVerb.InvocREv>()
       .map{v -> v.method}
+      .toSet()
+
+  fun transitionsForMethod(method: String) =
+    Delta
+      .filter{t -> 
+        when (t.verb) {
+          is TransitionVerb.InvocREv -> t.verb.method == method
+          else -> false
+        }
+      }
       .toSet()
 }
