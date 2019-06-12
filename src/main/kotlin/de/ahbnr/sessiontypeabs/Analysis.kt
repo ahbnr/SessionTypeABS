@@ -1,6 +1,6 @@
-package session_type_abs
+package de.ahbnr.sessiontypeabs
 
-import org.abs_models.frontend.ast.*;
+import org.abs_models.frontend.ast.*
 
 /**
  * NOTES
@@ -52,65 +52,62 @@ import org.abs_models.frontend.ast.*;
  * reactivation in general.
  */
 
-fun <T> findAwaits(n: ASTNode<T>)
-  where T : ASTNode<*> = n.findChildren(AwaitStmt::class.java)
+fun <T> findAwaits(n: ASTNode<T>): List<AwaitStmt>
+        where T : ASTNode<*> = n.findChildren(AwaitStmt::class.java)
 
-fun <T> findAwaitAsyncCall(n: ASTNode<T>)
-  where T : ASTNode<*> = n.findChildren(AwaitAsyncCall::class.java)
+fun <T> findAwaitAsyncCall(n: ASTNode<T>): List<AwaitAsyncCall>
+        where T : ASTNode<*> = n.findChildren(AwaitAsyncCall::class.java)
 
-fun <T> findSuspends(n: ASTNode<T>)
-  where T : ASTNode<*> = n.findChildren(SuspendStmt::class.java)
+fun <T> findSuspends(n: ASTNode<T>): List<SuspendStmt>
+        where T : ASTNode<*> = n.findChildren(SuspendStmt::class.java)
 
-fun <T> findSyncCalls(n: ASTNode<T>)
-  where T : ASTNode<*> = n.findChildren(SyncCall::class.java)
+fun <T> findSyncCalls(n: ASTNode<T>): List<SyncCall>
+        where T : ASTNode<*> = n.findChildren(SyncCall::class.java)
 
 /**
  * Check whether a SyncCall calls into an object of a specific interface
  */
 fun callsIntoInterface(call: SyncCall, interfaceDecl: InterfaceDecl) =
-  call
-    .getCalleeNoTransform()
-    .getType()
-    .getDecl()
-    .getQualifiedName()
-    .equals(
-      interfaceDecl.getQualifiedName()
-    )
+    call
+        .calleeNoTransform
+        .type
+        .decl
+        .qualifiedName == interfaceDecl.qualifiedName
 
 /**
  * Returns the implementation of the method called by a given SyncCall object
  * if the callee implements one of the interfaces of the given class
  */
 fun methodOfLocalSyncCall(call: SyncCall, context: ClassDecl): MethodImpl? {
-  val methods = (
-    if (context.getSuperTypes().any{interfaceDecl -> callsIntoInterface(call, interfaceDecl)}){ 
-      context.getMethodsNoTransform()
-    }
+    val methods = (
+            if (context.superTypes.any{ interfaceDecl -> callsIntoInterface(call, interfaceDecl)}){
+                context.methodsNoTransform
+            }
 
-    else {
-      List()
-    }
-  );
+            else {
+                List()
+            }
+        )
 
-  return methods
-    .find{m -> call.getMethod() == m.getMethodSigNoTransform().getName()};
+    return methods
+        .find{m -> call.method == m.methodSigNoTransform.name}
 }
 
 /**
  * ADT for storing possible reactivation points of a method.
  */
 sealed class ReactivationPoint {
-  class Await(
-    val awaitStmt: AwaitStmt
-  ): ReactivationPoint();
+    class Await(
+        val awaitStmt: AwaitStmt
+    ): ReactivationPoint()
 
-  class AwaitAsyncCall(
-    val awaitAsyncCall: org.abs_models.frontend.ast.AwaitAsyncCall
-  ): ReactivationPoint();
+    class AwaitAsyncCall(
+        val awaitAsyncCall: org.abs_models.frontend.ast.AwaitAsyncCall
+    ): ReactivationPoint()
 
-  class Suspend(
-    val suspendStmt: SuspendStmt
-  ): ReactivationPoint();
+    class Suspend(
+        val suspendStmt: SuspendStmt
+    ): ReactivationPoint()
 }
 
 /**
@@ -122,25 +119,24 @@ sealed class ReactivationPoint {
  * search.
  */
 fun findReactivationPoints(method: MethodImpl, context: ClassDecl, exploredMethods: MutableSet<String>): List<ReactivationPoint> {
-  val name = method.getMethodSig().getName();
-  if (exploredMethods.contains(name)) {
-    return emptyList();
-  }
+    val name = method.methodSig.name
+    if (exploredMethods.contains(name)) {
+        return emptyList()
+    }
 
-  // avoid circles.
-  exploredMethods.add(name);
+    // avoid circles.
+    exploredMethods.add(name)
 
-  val syncCalls = findSyncCalls(method);
-  val syncCallMethods = syncCalls
-    .map{call -> methodOfLocalSyncCall(call, context)}
-    .filterNotNull()
-    .filter{calledMethod -> !exploredMethods.contains(calledMethod.getMethodSig().getName())};
+    val syncCalls = findSyncCalls(method)
+    val syncCallMethods = syncCalls
+        .mapNotNull { call -> methodOfLocalSyncCall(call, context) }
+        .filter{calledMethod -> !exploredMethods.contains(calledMethod.methodSig.name)}
 
-  return (
-      findAwaits(method).map{a -> ReactivationPoint.Await(a)}
-    + findAwaitAsyncCall(method).map{asc -> ReactivationPoint.AwaitAsyncCall(asc)}
-    + findSuspends(method).map{s -> ReactivationPoint.Suspend(s)}
-    // recursion on synchronous calls
-    + syncCallMethods.map{m -> findReactivationPoints(m, context, exploredMethods)}.flatten()
-  )
+    return (
+            findAwaits(method).map{a -> ReactivationPoint.Await(a)}
+                    + findAwaitAsyncCall(method).map{asc -> ReactivationPoint.AwaitAsyncCall(asc)}
+                    + findSuspends(method).map{s -> ReactivationPoint.Suspend(s)}
+                    // recursion on synchronous calls
+                    + syncCallMethods.map{m -> findReactivationPoints(m, context, exploredMethods)}.flatten()
+            )
 }
