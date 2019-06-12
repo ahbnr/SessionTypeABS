@@ -8,6 +8,7 @@ sealed class TransitionVerb {
   ): TransitionVerb();
 
   class ReactEv(
+    val method: String,
     val register: Int
   ): TransitionVerb();
 }
@@ -41,7 +42,7 @@ class SessionAutomaton(
       .filter{t -> 
         when (t.verb) {
           is TransitionVerb.InvocREv -> t.verb.method == method
-          else -> false
+          is TransitionVerb.ReactEv -> t.verb.method == method
         }
       }
       .toSet()

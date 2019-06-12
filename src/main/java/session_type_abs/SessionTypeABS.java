@@ -94,7 +94,7 @@ public class SessionTypeABS {
                 ),
                 new Transition(
                   2,
-                  new TransitionVerb.ReactEv(0),
+                  new TransitionVerb.ReactEv("m1", 0),
                   3
                 ),
                 new Transition(
@@ -124,6 +124,135 @@ public class SessionTypeABS {
               ClassModificationsKt.introduceRegisters(cd, automaton);
               ClassModificationsKt.introduceStateModifications(cd, automaton);
               ClassModificationsKt.introduceSchedulerAnnotation(cd, "scheduler", automaton);
+              ClassModificationsKt.introduceReactivationTransitions(cd, automaton);
+
+              cd.doPrettyPrint(printer, formatter);
+              printer.flush();
+            }
+          }
+        }
+
+        else if (m.getName().equals("Test3")) {
+          m.addImport(new StarImport("SessionTypeABS.SchedulerHelpers"));
+
+          /*
+           -> (q0) --(p; invocREv m1; d |-> r0)--> q1
+                   --(p; invocREv m3; d |-> r1)--> q2
+                   --(reactEv; d = r0)--> (q3)
+                   --(p; invocREv m1; d |-> r0)--> q1
+          */
+
+          final SessionAutomaton automaton = new SessionAutomaton(
+            new HashSet<>(Arrays.asList(0, 1, 2, 3)),
+            0,
+            new HashSet<>(Arrays.asList(
+                new Transition(
+                  0,
+                  new TransitionVerb.InvocREv("m1", 0),
+                  1
+                ),
+                new Transition(
+                  1,
+                  new TransitionVerb.InvocREv("m3", 1),
+                  2
+                ),
+                new Transition(
+                  2,
+                  new TransitionVerb.ReactEv("m1", 0),
+                  3
+                ),
+                new Transition(
+                  3,
+                  new TransitionVerb.InvocREv("m1", 0),
+                  1
+                )
+            )),
+            new HashSet<>(Arrays.asList(0, 1))
+          );
+
+          final PrintWriter printer = new PrintWriter(System.out);
+          final DefaultABSFormatter formatter = new DefaultABSFormatter(printer);
+          
+          final FunctionDecl scheduler = SchedulerBuilderKt.scheduler("scheduler", automaton);
+          m.addDecl(scheduler);
+          scheduler.doPrettyPrint(printer, formatter);
+          printer.flush();
+
+          System.out.println("\n");
+
+          for (Decl d : m.getDecls()) {
+            if (d.getName().equals("O")) {
+              ClassDecl cd = (ClassDecl) d;
+
+              ClassModificationsKt.introduceFields(cd, automaton);
+              ClassModificationsKt.introduceRegisters(cd, automaton);
+              ClassModificationsKt.introduceStateModifications(cd, automaton);
+              ClassModificationsKt.introduceSchedulerAnnotation(cd, "scheduler", automaton);
+              ClassModificationsKt.introduceReactivationTransitions(cd, automaton);
+
+              cd.doPrettyPrint(printer, formatter);
+              printer.flush();
+            }
+          }
+        }
+
+        else if (m.getName().equals("Test4")) {
+          m.addImport(new StarImport("SessionTypeABS.SchedulerHelpers"));
+
+          /*
+           -> (q0) --(p; invocREv m1; d |-> r0)--> q1
+                   --(p; invocREv m3; d |-> r1)--> q2
+                   --(reactEv; d = r0)--> (q3)
+                   --(p; invocREv m1; d |-> r0)--> q1
+          */
+
+          final SessionAutomaton automaton = new SessionAutomaton(
+            new HashSet<>(Arrays.asList(0, 1, 2, 3)),
+            0,
+            new HashSet<>(Arrays.asList(
+                new Transition(
+                  0,
+                  new TransitionVerb.InvocREv("m1", 0),
+                  1
+                ),
+                new Transition(
+                  1,
+                  new TransitionVerb.InvocREv("m3", 1),
+                  2
+                ),
+                new Transition(
+                  2,
+                  new TransitionVerb.ReactEv("m1", 0),
+                  3
+                ),
+                new Transition(
+                  3,
+                  new TransitionVerb.InvocREv("m1", 0),
+                  1
+                )
+            )),
+            new HashSet<>(Arrays.asList(0, 1))
+          );
+
+          final PrintWriter printer = new PrintWriter(System.out);
+          final DefaultABSFormatter formatter = new DefaultABSFormatter(printer);
+          
+          final FunctionDecl scheduler = SchedulerBuilderKt.scheduler("scheduler", automaton);
+          m.addDecl(scheduler);
+          scheduler.doPrettyPrint(printer, formatter);
+          printer.flush();
+
+          System.out.println("\n");
+
+          for (Decl d : m.getDecls()) {
+            if (d.getName().equals("O")) {
+              ClassDecl cd = (ClassDecl) d;
+
+              ClassModificationsKt.introduceFields(cd, automaton);
+              ClassModificationsKt.introduceRegisters(cd, automaton);
+              ClassModificationsKt.introduceStateModifications(cd, automaton);
+              ClassModificationsKt.introduceSchedulerAnnotation(cd, "scheduler", automaton);
+              ClassModificationsKt.introduceReactivationTransitions(cd, automaton);
 
               cd.doPrettyPrint(printer, formatter);
               printer.flush();
