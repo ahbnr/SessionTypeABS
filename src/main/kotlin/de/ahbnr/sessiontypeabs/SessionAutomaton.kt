@@ -23,7 +23,8 @@ class SessionAutomaton(
     val Q: Set<Int>,
     val q0: Int,
     val Delta: Set<Transition>,
-    val registers: Set<Int>
+    val registers: Set<Int>,
+    val finalStates: Set<Int>
 ) {
     fun transitionsForState(state: Int) =
         Delta
