@@ -1,5 +1,7 @@
 package de.ahbnr.sessiontypeabs
 
+import de.ahbnr.sessiontypeabs.types.LocalType
+import de.ahbnr.sessiontypeabs.types.genAutomaton
 import org.abs_models.frontend.parser.Main
 import org.abs_models.backend.erlang.ErlangBackend
 
@@ -203,37 +205,17 @@ fun main(args: Array<String>) {
                            --(p; invocREv m1; d |-> r0)--> q1
                   */
 
-                    val automaton = SessionAutomaton(
-                        HashSet(Arrays.asList(0, 1, 2, 3)),
-                        0,
-                        HashSet(
-                            Arrays.asList(
-                                Transition(
-                                    0,
-                                    TransitionVerb.InvocREv("m1", 0),
-                                    1
-                                ),
-                                Transition(
-                                    1,
-                                    TransitionVerb.InvocREv("m3", 1),
-                                    2
-                                ),
-                                Transition(
-                                    2,
-                                    TransitionVerb.ReactEv("m1", 0),
-                                    3
-                                ),
-                                Transition(
-                                    3,
-                                    TransitionVerb.InvocREv("m1", 0),
-                                    1
+                    val type =
+                        LocalType.Repetition(
+                            LocalType.Concatenation(
+                                LocalType.InvocationRecv("f", "m1"),
+                                LocalType.Concatenation(
+                                    LocalType.InvocationRecv("f'", "m3"),
+                                    LocalType.Reactivation("f")
                                 )
                             )
-                        ),
-                        HashSet(Arrays.asList(0, 1)),
-                        HashSet()
-
-                    )
+                        )
+                    val automaton = genAutomaton(type)
 
                     val printer = PrintWriter(System.out)
                     val formatter = DefaultABSFormatter(printer)
