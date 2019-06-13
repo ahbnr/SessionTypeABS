@@ -125,8 +125,8 @@ fun genAutomaton(t: LocalType.Branching, c: Cache): SessionAutomaton {
   }
 
   else {
-    val head = t.choices.first()!!;
-    val tail = t.choices.drop(1)!!;
+    val head = t.choices.first();
+    val tail = t.choices.drop(1);
 
     val headAutomaton = genAutomaton(head, c);
     val tailAutomaton = genAutomaton(
