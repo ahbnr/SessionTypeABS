@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.31'
     id 'application'
     id 'antlr'
 }
@@ -21,6 +21,8 @@ dependencies {
     //implementation project('abstools')
     implementation files('../abstools/frontend/dist/absfrontend.jar')
 
+    implementation 'info.picocli:picocli:4.0.0-beta-1b'
+
     // set antlr version
     antlr "org.antlr:antlr4:4.7"
 }
@@ -33,8 +35,7 @@ compileTestKotlin {
 }
 
 application {
-    //mainClassName = 'de.ahbnr.sessiontypeabs.SessionTypeABSKt'
-    mainClassName = 'de.ahbnr.sessiontypeabs.ParserKt'
+    mainClassName = 'de.ahbnr.sessiontypeabs.CLI'
 }
 
 run {

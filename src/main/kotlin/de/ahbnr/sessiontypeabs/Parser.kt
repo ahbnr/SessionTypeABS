@@ -7,8 +7,8 @@ import de.ahbnr.sessiontypeabs.types.LocalType
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-fun main(args: Array<String>) {
-    val input = CharStreams.fromFileName("TypeTest.st")
+fun parseFile(fileName: String): Map<String, LocalType> {
+    val input = CharStreams.fromFileName(fileName)
     val lexer = LocalTypesLexer(input)
     val parser = LocalTypesParser(CommonTokenStream(lexer))
 
@@ -50,5 +50,5 @@ fun main(args: Array<String>) {
     })
 
 
-    println(classToType)
+    return(classToType)
 }
