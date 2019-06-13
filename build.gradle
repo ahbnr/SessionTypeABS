@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
     id 'application'
+    id 'antlr'
 }
 
 group 'de.ahbnr'
@@ -19,6 +20,9 @@ dependencies {
 
     //implementation project('abstools')
     implementation files('../abstools/frontend/dist/absfrontend.jar')
+
+    // set antlr version
+    antlr "org.antlr:antlr4:4.7"
 }
 
 compileKotlin {
@@ -29,7 +33,8 @@ compileTestKotlin {
 }
 
 application {
-    mainClassName = 'de.ahbnr.sessiontypeabs.SessionTypeABSKt'
+    //mainClassName = 'de.ahbnr.sessiontypeabs.SessionTypeABSKt'
+    mainClassName = 'de.ahbnr.sessiontypeabs.ParserKt'
 }
 
 run {
@@ -37,3 +42,15 @@ run {
         args findProperty('runArgs')
     }
 }
+
+// Make ANTLR generated sources available
+sourceSets {
+  main.java.srcDirs += "${project.buildDir}/generated-src/antlr/main"
+}
+
+generateGrammarSource {
+  arguments += ["-visitor", "-package", "de.ahbnr.sessiontypeabs.antlr"]
+  outputDirectory = file("${project.buildDir}/generated-src/antlr/main/de/ahbnr/sessiontypeabs/antlr")
+}
+
+compileKotlin.dependsOn generateGrammarSource
