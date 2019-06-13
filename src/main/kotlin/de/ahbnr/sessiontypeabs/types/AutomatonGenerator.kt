@@ -1,8 +1,8 @@
-package de.ahbnr.sessiontypeabs.types;
+package de.ahbnr.sessiontypeabs.types
 
-import de.ahbnr.sessiontypeabs.SessionAutomaton;
-import de.ahbnr.sessiontypeabs.Transition;
-import de.ahbnr.sessiontypeabs.TransitionVerb;
+import de.ahbnr.sessiontypeabs.SessionAutomaton
+import de.ahbnr.sessiontypeabs.Transition
+import de.ahbnr.sessiontypeabs.TransitionVerb
 
 data class Cache(
   var nextFreeState: Int = 0,
@@ -12,15 +12,15 @@ data class Cache(
 ) {
   fun registerForFuture(f: Future) =
     assignedRegisters.getOrElse(f) {
-      val reg = nextFreeRegister++;
-      assignedRegisters.plusAssign(Pair(f, reg));
+      val reg = nextFreeRegister++
+      assignedRegisters.plusAssign(Pair(f, reg))
 
-      return reg;
+      return reg
     }
 
   fun nextState() = nextFreeState++
 
-  fun findMethodForFuture(f: Future) = futureToMethod.get(f)
+  fun findMethodForFuture(f: Future) = futureToMethod[f]
   fun saveMethodForFuture(f: Future, m: Method) =
     futureToMethod.plusAssign(Pair(f, m))
 }
@@ -28,10 +28,10 @@ data class Cache(
 fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: SessionAutomaton, finalStates: Set<Int>): SessionAutomaton {
   // TODO: Throw exception if glue states are not part of a0
 
-  val a1InitialTransitions = a1.transitionsForState(a1.q0);
+  val a1InitialTransitions = a1.transitionsForState(a1.q0)
   val replacementTransitions = a1InitialTransitions.map{
     initialT -> glueStates.map{qG -> Transition(qG, initialT.verb, initialT.q2)}
-  }.flatten();
+  }.flatten()
 
   return SessionAutomaton(
     a0.Q.union(a1.Q.minus(a1.q0)), // Q1 ∪ Q2 \ {a1.q0}
@@ -45,11 +45,11 @@ fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: SessionAutoma
 }
 
 fun genAutomaton(t: LocalType.InvocationRecv, c: Cache): SessionAutomaton {
-  val q0 = c.nextState();
-  val q1 = c.nextState();
-  val r0 = c.registerForFuture(t.f);
+  val q0 = c.nextState()
+  val q1 = c.nextState()
+  val r0 = c.registerForFuture(t.f)
 
-  c.saveMethodForFuture(t.f, t.m);
+  c.saveMethodForFuture(t.f, t.m)
 
   return SessionAutomaton(
     setOf(q0, q1),
@@ -63,10 +63,10 @@ fun genAutomaton(t: LocalType.InvocationRecv, c: Cache): SessionAutomaton {
 }
 
 fun genAutomaton(t: LocalType.Reactivation, c: Cache): SessionAutomaton {
-  val q0 = c.nextState();
-  val q1 = c.nextState();
-  val r0 = c.registerForFuture(t.f);
-  val method = c.findMethodForFuture(t.f)!!; // TODO convert to proper exception
+  val q0 = c.nextState()
+  val q1 = c.nextState()
+  val r0 = c.registerForFuture(t.f)
+  val method = c.findMethodForFuture(t.f)!! // TODO convert to proper exception
 
   return SessionAutomaton(
     setOf(q0, q1),
@@ -80,26 +80,26 @@ fun genAutomaton(t: LocalType.Reactivation, c: Cache): SessionAutomaton {
 }
 
 fun genAutomaton(t: LocalType.Concatenation, c: Cache): SessionAutomaton {
-  val a0 = genAutomaton(t.lhs, c);
-  val a1 = genAutomaton(t.rhs, c);
+  val a0 = genAutomaton(t.lhs, c)
+  val a1 = genAutomaton(t.rhs, c)
 
   return concatAutomata(
     a0,
     a0.finalStates,
     a1,
     a1.finalStates
-  );
+  )
 }
 
 fun genAutomaton(t: LocalType.Repetition, c: Cache): SessionAutomaton {
   // TODO: Rephrase as special case of automaton concatenation
-  val a = genAutomaton(t.repeatedType, c);
+  val a = genAutomaton(t.repeatedType, c)
 
-  val initialTransitions = a.transitionsForState(a.q0);
+  val initialTransitions = a.transitionsForState(a.q0)
   val additionalBackTransitions =
     initialTransitions.map{
       initialT -> a.finalStates.map{qF -> Transition(qF, initialT.verb, initialT.q2)}
-    }.flatten();
+    }.flatten()
 
   return SessionAutomaton(
     a.Q,
@@ -113,7 +113,7 @@ fun genAutomaton(t: LocalType.Repetition, c: Cache): SessionAutomaton {
 
 fun genAutomaton(t: LocalType.Branching, c: Cache): SessionAutomaton {
   if (t.choices.isEmpty()) {
-    val q0 = c.nextState();
+    val q0 = c.nextState()
 
     return SessionAutomaton(
       setOf(q0),
@@ -121,18 +121,18 @@ fun genAutomaton(t: LocalType.Branching, c: Cache): SessionAutomaton {
       emptySet(),
       emptySet(),
       setOf(q0) // TODO: Evaluate if this a sane decision, it requires special handling when merging branches.
-    );
+    )
   }
 
   else {
-    val head = t.choices.first();
-    val tail = t.choices.drop(1);
+    val head = t.choices.first()
+    val tail = t.choices.drop(1)
 
-    val headAutomaton = genAutomaton(head, c);
+    val headAutomaton = genAutomaton(head, c)
     val tailAutomaton = genAutomaton(
       LocalType.Branching(tail),
       c
-    );
+    )
 
     // TODO: Enforce determinism
     // Either here or by providing a generic transformation function to generate
@@ -166,7 +166,7 @@ fun genAutomaton(t: LocalType, c: Cache) =
 
 
 fun genAutomaton(t: LocalType): SessionAutomaton {
-  val c = Cache();
+  val c = Cache()
 
   return genAutomaton(t, c)
 }
