@@ -1,4 +1,4 @@
-package de.ahbnr.sessiontypeabs.types;
+package de.ahbnr.sessiontypeabs.types
 
 sealed class LocalType {
   data class InvocationRecv(

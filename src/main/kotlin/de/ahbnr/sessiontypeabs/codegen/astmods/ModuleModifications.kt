@@ -42,7 +42,7 @@ fun enforceSessionTypesOnModule(
 
             m.addDecl(scheduler)
 
-            enforceAutomatonOnClass(decl, automaton, schedulerName);
+            enforceAutomatonOnClass(decl, automaton, schedulerName)
 
             // TODO make printing optional:
             println("Modified ${decl.name}:")

@@ -1,3 +1,3 @@
-package de.ahbnr.sessiontypeabs.types;
+package de.ahbnr.sessiontypeabs.types
 
-typealias Method = String;
+typealias Method = String

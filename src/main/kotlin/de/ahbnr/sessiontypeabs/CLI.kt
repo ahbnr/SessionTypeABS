@@ -12,7 +12,7 @@ import picocli.CommandLine.*
 class CLI : Runnable {
     // TODO make files parameter mandatory
     @Parameters(paramLabel="FILES")
-    private val files: Array<String> = emptyArray();
+    private val files: Array<String> = emptyArray()
 
     override fun run() {
         val absSourceFiles = files.filter{
@@ -33,7 +33,7 @@ class CLI : Runnable {
 
         // TODO: Check if any type files have been supplied at all
         println("Type information:")
-        println(mergedTypeInformation);
+        println(mergedTypeInformation)
 
         // TODO: Check if any ABS files have been supplied at all
         println("Modification of ABS model and compilation:")

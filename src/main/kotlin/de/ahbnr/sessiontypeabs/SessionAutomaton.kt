@@ -5,12 +5,12 @@ sealed class TransitionVerb {
     class InvocREv(
         val method: String,
         val register: Int
-    ): TransitionVerb();
+    ): TransitionVerb()
 
     class ReactEv(
         val method: String,
         val register: Int
-    ): TransitionVerb();
+    ): TransitionVerb()
 }
 
 class Transition(

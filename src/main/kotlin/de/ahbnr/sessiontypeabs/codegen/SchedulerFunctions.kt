@@ -1,7 +1,7 @@
 package de.ahbnr.sessiontypeabs.codegen
 
 import de.ahbnr.sessiontypeabs.*
-import org.abs_models.frontend.ast.*;
+import org.abs_models.frontend.ast.*
 
 /**
  * This file provides functions for building scheduler functions.
@@ -101,9 +101,9 @@ private fun stateSwitchCase(stateParam: String, automaton: SessionAutomaton) =
  * in the current [state].
  */
 private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomaton): FnApp {
-    val transitionVerbs = automaton.transitionsForState(state).map{t -> t.verb};
-    val methodNames = mutableSetOf<String>();
-    val registers = mutableSetOf<Int>();
+    val transitionVerbs = automaton.transitionsForState(state).map{t -> t.verb}
+    val methodNames = mutableSetOf<String>()
+    val registers = mutableSetOf<Int>()
 
     transitionVerbs.forEach {
         when(it) {
@@ -112,6 +112,6 @@ private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomato
         }
     }
 
-    return matchNamesOrRegisters(methodNames, registers);
+    return matchNamesOrRegisters(methodNames, registers)
 }
 
