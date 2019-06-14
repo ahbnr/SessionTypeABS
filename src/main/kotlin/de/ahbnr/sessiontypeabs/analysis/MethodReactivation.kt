@@ -1,6 +1,9 @@
-package de.ahbnr.sessiontypeabs
+package de.ahbnr.sessiontypeabs.analysis
 
 import org.abs_models.frontend.ast.*
+
+// This file contains functions to identify nodes in the AST of a method where it could be potentially reactivated after
+// suspension.
 
 /**
  * NOTES
@@ -52,47 +55,6 @@ import org.abs_models.frontend.ast.*
  * reactivation in general.
  */
 
-fun <T> findAwaits(n: ASTNode<T>): List<AwaitStmt>
-        where T : ASTNode<*> = n.findChildren(AwaitStmt::class.java)
-
-fun <T> findAwaitAsyncCall(n: ASTNode<T>): List<AwaitAsyncCall>
-        where T : ASTNode<*> = n.findChildren(AwaitAsyncCall::class.java)
-
-fun <T> findSuspends(n: ASTNode<T>): List<SuspendStmt>
-        where T : ASTNode<*> = n.findChildren(SuspendStmt::class.java)
-
-fun <T> findSyncCalls(n: ASTNode<T>): List<SyncCall>
-        where T : ASTNode<*> = n.findChildren(SyncCall::class.java)
-
-/**
- * Check whether a SyncCall calls into an object of a specific interface
- */
-fun callsIntoInterface(call: SyncCall, interfaceDecl: InterfaceDecl) =
-    call
-        .calleeNoTransform
-        .type
-        .decl
-        .qualifiedName == interfaceDecl.qualifiedName
-
-/**
- * Returns the implementation of the method called by a given SyncCall object
- * if the callee implements one of the interfaces of the given class
- */
-fun methodOfLocalSyncCall(call: SyncCall, context: ClassDecl): MethodImpl? {
-    val methods = (
-            if (context.superTypes.any{ interfaceDecl -> callsIntoInterface(call, interfaceDecl)}){
-                context.methodsNoTransform
-            }
-
-            else {
-                List()
-            }
-        )
-
-    return methods
-        .find{m -> call.method == m.methodSigNoTransform.name}
-}
-
 /**
  * ADT for storing possible reactivation points of a method.
  */
@@ -133,10 +95,20 @@ fun findReactivationPoints(method: MethodImpl, context: ClassDecl, exploredMetho
         .filter{calledMethod -> !exploredMethods.contains(calledMethod.methodSig.name)}
 
     return (
-            findAwaits(method).map{a -> ReactivationPoint.Await(a)}
-                    + findAwaitAsyncCall(method).map{asc -> ReactivationPoint.AwaitAsyncCall(asc)}
-                    + findSuspends(method).map{s -> ReactivationPoint.Suspend(s)}
+            findAwaits(method).map{a -> ReactivationPoint.Await(a) }
+                    + findAwaitAsyncCall(method).map{asc ->
+                ReactivationPoint.AwaitAsyncCall(
+                    asc
+                )
+            }
+                    + findSuspends(method).map{s -> ReactivationPoint.Suspend(s) }
                     // recursion on synchronous calls
-                    + syncCallMethods.map{m -> findReactivationPoints(m, context, exploredMethods)}.flatten()
+                    + syncCallMethods.map{m ->
+                findReactivationPoints(
+                    m,
+                    context,
+                    exploredMethods
+                )
+            }.flatten()
             )
 }

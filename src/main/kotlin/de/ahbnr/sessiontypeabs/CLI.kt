@@ -1,7 +1,7 @@
 package de.ahbnr.sessiontypeabs
 
 import de.ahbnr.sessiontypeabs.types.LocalType
-import java.io.File;
+import de.ahbnr.sessiontypeabs.types.parseFile
 
 import picocli.CommandLine
 import picocli.CommandLine.*
@@ -26,7 +26,7 @@ class CLI : Runnable {
 
         val mergedTypeInformation =
             typeSourceFiles
-                .map{parseFile(it)}
+                .map{ parseFile(it) }
                 .fold(emptyMap<String, LocalType>()) {
                         acc, element -> acc.plus(element)
                 }

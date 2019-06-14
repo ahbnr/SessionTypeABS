@@ -1,6 +1,10 @@
-package de.ahbnr.sessiontypeabs
+package de.ahbnr.sessiontypeabs.codegen
 
 import org.abs_models.frontend.ast.*;
+
+/**
+ * This file provides helper function to build ABS AST nodes for constructs which are commonly used in ABS
+ */
 
 // Types
 fun processT() =

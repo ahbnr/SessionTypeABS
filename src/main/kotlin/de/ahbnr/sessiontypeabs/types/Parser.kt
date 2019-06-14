@@ -1,12 +1,15 @@
-package de.ahbnr.sessiontypeabs
+package de.ahbnr.sessiontypeabs.types
 
 import de.ahbnr.sessiontypeabs.antlr.LocalTypesBaseVisitor
 import de.ahbnr.sessiontypeabs.antlr.LocalTypesLexer
 import de.ahbnr.sessiontypeabs.antlr.LocalTypesParser
-import de.ahbnr.sessiontypeabs.types.LocalType
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
+/**
+ * Parses Local Session Types from a file and returns their data representation for each name of a class they have been
+ * applied on.
+ */
 fun parseFile(fileName: String): Map<String, LocalType> {
     val input = CharStreams.fromFileName(fileName)
     val lexer = LocalTypesLexer(input)
