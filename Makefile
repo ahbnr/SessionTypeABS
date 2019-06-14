@@ -1,4 +1,4 @@
-.PHONY: all run
+.PHONY: all run jar
 
 # https://stackoverflow.com/a/14061796
 # If the first argument is "run"...
@@ -14,3 +14,7 @@ all:
 
 run:
 	./gradlew --console=rich run --args "$(RUN_ARGS)"
+
+jar:
+	./gradlew --console=rich shadowJar
+	echo "Generated JAR: build/libs/sessiontypeabs-1.0-SNAPSHOT-all.jar"
