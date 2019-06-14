@@ -35,7 +35,7 @@ compileTestKotlin {
 }
 
 application {
-    mainClassName = 'de.ahbnr.sessiontypeabs.CLI'
+    mainClassName = 'de.ahbnr.sessiontypeabs.cli.CLI'
 }
 
 run {

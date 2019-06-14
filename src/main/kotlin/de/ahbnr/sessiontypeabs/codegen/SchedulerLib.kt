@@ -10,6 +10,8 @@ import org.abs_models.frontend.ast.*
  * This file provides functions to easily build AST nodes to access the contents of the module.
  */
 
+const val schedulerLibModuleName = "SessionTypeABS.SchedulerHelpers"
+
 // Types
 fun registerT() =
     UnresolvedTypeUse(
