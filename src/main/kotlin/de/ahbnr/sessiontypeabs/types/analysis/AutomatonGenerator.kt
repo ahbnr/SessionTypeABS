@@ -1,8 +1,5 @@
 package de.ahbnr.sessiontypeabs.types.analysis
 
-import de.ahbnr.sessiontypeabs.SessionAutomaton
-import de.ahbnr.sessiontypeabs.Transition
-import de.ahbnr.sessiontypeabs.TransitionVerb
 import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.CondensedTypeVisitor
 import de.ahbnr.sessiontypeabs.types.Future
@@ -75,7 +72,13 @@ private fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: Sessi
 
     val a1InitialTransitions = a1.transitionsForState(a1.q0)
     val replacementTransitions = a1InitialTransitions.map{
-            initialT -> glueStates.map{qG -> Transition(qG, initialT.verb, initialT.q2)}
+            initialT -> glueStates.map{qG ->
+        Transition(
+            qG,
+            initialT.verb,
+            initialT.q2
+        )
+    }
     }.flatten()
 
     return SessionAutomaton(
@@ -100,7 +103,11 @@ private fun genAutomaton(t: CondensedType.InvocationRecv, c: Cache): SessionAuto
         setOf(q0, q1),
         q0,
         setOf(
-            Transition(q0, TransitionVerb.InvocREv(t.m, r0), q1)
+            Transition(
+                q0,
+                TransitionVerb.InvocREv(t.m, r0),
+                q1
+            )
         ),
         setOf(r0),
         setOf(q1)
@@ -119,7 +126,11 @@ private fun genAutomaton(t: CondensedType.Reactivation, c: Cache): SessionAutoma
         setOf(q0, q1),
         q0,
         setOf(
-            Transition(q0, TransitionVerb.ReactEv(method, r0), q1)
+            Transition(
+                q0,
+                TransitionVerb.ReactEv(method, r0),
+                q1
+            )
         ),
         setOf(r0),
         setOf(q1)
@@ -156,7 +167,13 @@ private fun genAutomaton(t: CondensedType.Repetition, c: Cache): SessionAutomato
     val initialTransitions = a.transitionsForState(a.q0)
     val additionalBackTransitions =
         initialTransitions.map{
-                initialT -> a.finalStates.map{qF -> Transition(qF, initialT.verb, initialT.q2)}
+                initialT -> a.finalStates.map{qF ->
+            Transition(
+                qF,
+                initialT.verb,
+                initialT.q2
+            )
+        }
         }.flatten()
 
     return SessionAutomaton(

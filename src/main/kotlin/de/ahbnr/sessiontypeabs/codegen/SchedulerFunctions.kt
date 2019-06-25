@@ -1,7 +1,8 @@
 package de.ahbnr.sessiontypeabs.codegen
 
-import de.ahbnr.sessiontypeabs.*
 import de.ahbnr.sessiontypeabs.types.Method
+import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
+import de.ahbnr.sessiontypeabs.types.analysis.TransitionVerb
 import org.abs_models.frontend.ast.*
 
 /**

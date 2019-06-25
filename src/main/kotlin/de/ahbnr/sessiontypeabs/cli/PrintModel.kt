@@ -1,8 +1,7 @@
 package de.ahbnr.sessiontypeabs.cli
 
-import de.ahbnr.sessiontypeabs.applyTypesToModel
-import de.ahbnr.sessiontypeabs.parseModel
-import de.ahbnr.sessiontypeabs.parseTypes
+import de.ahbnr.sessiontypeabs.compiler.buildModel
+import de.ahbnr.sessiontypeabs.compiler.buildTypes
 import org.abs_models.backend.prettyprint.DefaultABSFormatter
 
 import picocli.CommandLine.*
@@ -24,15 +23,13 @@ class PrintModel : Runnable {
             it.endsWith(".st")
         }
 
-        val model = parseModel(absSourceFiles)
-        val types = parseTypes(typeSourceFiles)
-
-        val modLog = applyTypesToModel(model, types)
+        val typeBuild = buildTypes(typeSourceFiles)
+        val modelBuild = buildModel(absSourceFiles, typeBuild)
 
         val printer = PrintWriter(System.out)
         val formatter = DefaultABSFormatter(printer)
 
-        modLog.allDecls().forEach{
+        modelBuild.modificationLog.allDecls().forEach{
             it.doPrettyPrint(printer, formatter)
             printer.println()
             printer.println()

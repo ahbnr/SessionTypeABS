@@ -5,57 +5,7 @@ import de.ahbnr.sessiontypeabs.types.*
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-/**
- * Parses Local Session Types from a file and returns their data representation for each name of a class they have been
- * applied on.
- */
-fun parseFile(fileName: String): Map<Class, CondensedType> {
-    val input = CharStreams.fromFileName(fileName)
-    val lexer = LocalTypesLexer(input)
-    val parser = LocalTypesParser(CommonTokenStream(lexer))
-
-    val typeVisitor = object: LocalTypesBaseVisitor<CondensedType>() {
-        override fun visitInvocREvT(ctx: LocalTypesParser.InvocREvTContext) =
-            CondensedType.InvocationRecv(
-                Future(ctx.invocREv().future.text),
-                Method(ctx.invocREv().method.text)
-            )
-
-        override fun visitRepeatT(ctx: LocalTypesParser.RepeatTContext) =
-            CondensedType.Repetition(
-                ctx.repeat().repeatedType.accept(this)
-            )
-
-        override fun visitConcatT(ctx: LocalTypesParser.ConcatTContext): CondensedType =
-            CondensedType.Concatenation(
-                ctx.lhs.accept(this),
-                ctx.rhs.accept(this)
-            )
-
-        override fun visitReactEvT(ctx: LocalTypesParser.ReactEvTContext) =
-            CondensedType.Reactivation(Future(ctx.reactEv().future.text))
-
-        override fun visitBranchT(ctx: LocalTypesParser.BranchTContext) =
-            CondensedType.Branching(
-                ctx.branch().localType().map { subCtx -> subCtx.accept(this) }
-            )
-    }
-
-    val classToType = parser.typeAssignments().accept(object: LocalTypesBaseVisitor<Map<Class, CondensedType>>() {
-        override fun visitTypeAssignments(ctx: LocalTypesParser.TypeAssignmentsContext) =
-            ctx
-                .typeAssignment()
-                .map{
-                    Class(it.className.text) to it.localType().accept(typeVisitor)
-                }
-                .toMap()
-    })
-
-
-    return classToType
-}
-
-fun parseGlobalTFile(fileName: String): GlobalType {
+fun parseGlobalType(fileName: String): GlobalType {
     val input = CharStreams.fromFileName(fileName)
     val lexer = GlobalTypesLexer(input)
     val parser = GlobalTypesParser(CommonTokenStream(lexer))

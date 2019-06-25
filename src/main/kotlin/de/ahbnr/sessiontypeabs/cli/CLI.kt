@@ -7,7 +7,6 @@ import picocli.CommandLine
     subcommands = [
         Compile::class,
         PrintTypes::class,
-        TestGlobalTypes::class,
         PrintModel::class
     ]
 )

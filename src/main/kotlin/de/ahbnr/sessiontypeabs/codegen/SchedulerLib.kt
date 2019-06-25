@@ -1,6 +1,6 @@
 package de.ahbnr.sessiontypeabs.codegen
 
-import de.ahbnr.sessiontypeabs.SessionAutomaton
+import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 import org.abs_models.frontend.ast.*
 
 /**

@@ -1,4 +1,4 @@
-package de.ahbnr.sessiontypeabs
+package de.ahbnr.sessiontypeabs.types.analysis
 
 import de.ahbnr.sessiontypeabs.types.Method
 

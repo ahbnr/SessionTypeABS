@@ -1,6 +1,6 @@
 package de.ahbnr.sessiontypeabs.cli
 
-import de.ahbnr.sessiontypeabs.parseTypes
+import de.ahbnr.sessiontypeabs.compiler.parseTypes
 
 import picocli.CommandLine.*
 

@@ -1,12 +1,12 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
-import de.ahbnr.sessiontypeabs.*
 import de.ahbnr.sessiontypeabs.codegen.intT
 import de.ahbnr.sessiontypeabs.codegen.nothingC
 import de.ahbnr.sessiontypeabs.codegen.registerT
 import de.ahbnr.sessiontypeabs.codegen.schedulerAnnotation
 import de.ahbnr.sessiontypeabs.codegen.*
 import de.ahbnr.sessiontypeabs.types.Method
+import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 
 import org.abs_models.frontend.ast.*
 
