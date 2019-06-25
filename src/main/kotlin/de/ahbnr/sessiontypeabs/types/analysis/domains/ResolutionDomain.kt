@@ -152,13 +152,13 @@ data class ResolutionDomain(
                     true -> return this.copy()
                     false -> throw TransferException(
                         label,
-                        "Can not fetch from future ${label.f}, since it has not been resolved yet."
+                        "Can not fetch from future ${label.f.value}, since it has not been resolved yet."
                     )
                 }
             is UnknownResolutionState ->
                 throw TransferException(
                     label,
-                    "Can not fetch from future ${label.f}, since it might not have been resolved yet."
+                    "Can not fetch from future ${label.f.value}, since it might not have been resolved yet."
                 )
         }
     }

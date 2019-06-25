@@ -1,12 +1,13 @@
 package de.ahbnr.sessiontypeabs.compiler
 
 import de.ahbnr.sessiontypeabs.codegen.astmods.ModificationLog
+import de.ahbnr.sessiontypeabs.compiler.exceptions.CompilerException
 import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedGlobalType
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
 import de.ahbnr.sessiontypeabs.types.Class
 
 /**
- * @throws RuntimeException iff there is a class participating in the given
+ * @throws CompilerException iff there is a class participating in the given
  *                          global Session Types, but which was not found during
  *                          modification of the ABS model.
  */
@@ -21,14 +22,14 @@ fun checkForMissingParticipants(protocols: List<AnalyzedGlobalType<CombinedDomai
 
     if (difference.isNotEmpty()) {
         // TODO use better exception type
-        throw RuntimeException("The following classes are participating in the protocol, but could not be found in the supplied ABS model: $difference")
+        throw CompilerException("The following classes are participating in the protocol, but could not be found in the supplied ABS model: ${difference.map{it.value}}")
     }
 }
 
 
 /**
- * @throws RuntimeException iff there is an actor (class) which participates in
- *                          more than one global session type.
+ * @throws CompilerException iff there is an actor (class) which participates in
+ *                           more than one global session type.
  */
 fun ensureProtocolsAreDisjunct(analyzedGlobalTypes: List<AnalyzedGlobalType<CombinedDomain>>) {
     val participants = analyzedGlobalTypes.map { it.postState.getParticipants() }
@@ -38,7 +39,7 @@ fun ensureProtocolsAreDisjunct(analyzedGlobalTypes: List<AnalyzedGlobalType<Comb
             if (outerIndex != innerIndex) { // Dont compare a set to itself
                 val intersection = participantSet intersect otherParticipantSet
                 if (intersection.isNotEmpty()) {
-                    throw RuntimeException("If multiple protocols are used, no class may participate in more than 1 protocol. The following classes are participating in more than 1 protocol.") // TODO: Better exception
+                    throw CompilerException("If multiple protocols are used, no class may participate in more than 1 protocol. The following classes are participating in more than 1 protocol.") // TODO: Better exception
                 }
             }
         }

@@ -213,7 +213,7 @@ data class ClassActivityDomain(
             KnownActivityState(ActivityType.Active()) -> this.copy()
             else -> throw TransferException(
                 label,
-                "${label.c} can not fetch, since it might not be active."
+                "${label.c.value} can not fetch, since it might not be active."
             )
         }
 

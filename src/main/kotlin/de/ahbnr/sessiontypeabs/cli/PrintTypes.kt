@@ -12,8 +12,14 @@ class PrintTypes : Runnable {
     private val files: Array<String> = emptyArray()
 
     override fun run() {
-        val types = parseTypes(files.asIterable())
+        try {
+            val types = parseTypes(files.asIterable())
 
-        println(types)
+            println(types)
+        }
+
+        catch (exception: Exception) {
+            handleException(exception)
+        }
     }
 }

@@ -11,14 +11,20 @@ class Compile : Runnable {
     private val files: Array<String> = emptyArray()
 
     override fun run() {
-        extractUnknownFiles(files.asIterable())
-            .forEach{
-                println("WARNING: Not considering file $it, since it neither has the .abs or .st file extension")
-            }
+        try {
+            extractUnknownFiles(files.asIterable())
+                .forEach {
+                    println("WARNING: Not considering file $it, since it neither has the .abs or .st file extension")
+                }
 
-        val absSourceFiles = extractAbsSourceFiles(files.asIterable())
-        val typeSourceFiles = extractTypeSourceFiles(files.asIterable())
+            val absSourceFiles = extractAbsSourceFiles(files.asIterable())
+            val typeSourceFiles = extractTypeSourceFiles(files.asIterable())
 
-        compile(absSourceFiles, typeSourceFiles)
+            compile(absSourceFiles, typeSourceFiles)
+        }
+
+        catch (exception: Exception) {
+            handleException(exception)
+        }
     }
 }

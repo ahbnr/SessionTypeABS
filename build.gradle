@@ -22,7 +22,7 @@ dependencies {
     //implementation project('abstools')
     implementation files('../abstools/frontend/dist/absfrontend.jar')
 
-    implementation 'info.picocli:picocli:4.0.0-beta-1b'
+    implementation 'info.picocli:picocli:4.0.0-beta-2'
 
     // set antlr version
     antlr "org.antlr:antlr4:4.7"

@@ -1,47 +1,59 @@
 package de.ahbnr.sessiontypeabs.types
 
-sealed class GlobalType {
+import de.ahbnr.sessiontypeabs.types.parser.FileContext
+
+sealed class GlobalType() {
+    open val fileContext: FileContext? = null
+
     // 0 -f-> p:m
     data class Initialization(
         val f: Future,
         val c: Class,
-        val m: Method
+        val m: Method,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Concatenation(
         val lhs: GlobalType,
-        val rhs: GlobalType
+        val rhs: GlobalType,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Interaction(
         val caller: Class,
         val f: Future,
         val callee: Class,
-        val m: Method
+        val m: Method,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Resolution(
         val c: Class,
-        val f: Future // TODO add ADT constructor name
+        val f: Future, // TODO add ADT constructor name
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Fetching( // TODO better name
         val c: Class,
-        val f: Future // TODO add ADT constructor name
+        val f: Future, // TODO add ADT constructor name
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Release(
         val c: Class,
-        val f: Future
+        val f: Future,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Branching(
         val c: Class,
-        val branches: List<GlobalType>
+        val branches: List<GlobalType>,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     data class Repetition(
-        val repeatedType: GlobalType
+        val repeatedType: GlobalType,
+        override val fileContext: FileContext? = null
     ): GlobalType()
 
     fun <ReturnT> accept(visitor: GlobalTypeVisitor<ReturnT>): ReturnT =
