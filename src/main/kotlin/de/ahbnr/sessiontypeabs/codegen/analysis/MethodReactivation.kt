@@ -1,4 +1,4 @@
-package de.ahbnr.sessiontypeabs.analysis
+package de.ahbnr.sessiontypeabs.codegen.analysis
 
 import org.abs_models.frontend.ast.*
 

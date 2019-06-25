@@ -1,20 +1,28 @@
 package de.ahbnr.sessiontypeabs.types.analysis.domains
 
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.Mergeable
-import de.ahbnr.sessiontypeabs.types.analysis.Repeatable
-import de.ahbnr.sessiontypeabs.types.analysis.TransferException
-import de.ahbnr.sessiontypeabs.types.analysis.Transferable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
 
+/**
+ * This domain ensures, that every global session type begins with an
+ * initialization ([GlobalType.Initialization]).
+ */
 data class InitializationDomain(
     val initialized: Boolean = false
-): Mergeable<InitializationDomain>, Transferable<GlobalType, InitializationDomain>, Repeatable<InitializationDomain>
+): Mergeable<InitializationDomain>,
+    Transferable<GlobalType, InitializationDomain>,
+    Repeatable<InitializationDomain>
 {
+    /**
+     * A loop is always considered self-contained by this domain.
+     * (An exception is only thrown in case of a programmer error)
+     */
     override fun loopContained(beforeLoop: InitializationDomain, errorDescriptions: MutableList<String>): Boolean {
         if (this != beforeLoop) {
-            errorDescriptions.add("Initialization steps before the loop and after the first iteration don't match, but should be equal.")
-
-            return false
+            throw RuntimeException("The initialization status before the loop and after the first iteration don't match, but should be equal. This should never happen and it is an error in this program.")
         }
 
         return true
@@ -34,7 +42,10 @@ data class InitializationDomain(
 
     private fun transfer(label: GlobalType.Initialization) =
         if (isInitialized()) {
-            throw TransferException(label, "Protocol is initialized twice.")
+            throw TransferException(
+                label,
+                "Protocol is initialized twice."
+            )
         } else {
             this.copy(initialized = true)
         }

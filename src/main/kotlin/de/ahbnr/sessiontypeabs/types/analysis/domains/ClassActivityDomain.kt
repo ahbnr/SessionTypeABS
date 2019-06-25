@@ -3,8 +3,13 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.*
-import de.ahbnr.sessiontypeabs.types.analysis.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.join
+import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.JoinSemiFlatLattice
+import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.areMapsWithDefaultValEqual
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
 
 sealed class ActivityType {
     object Inactive : ActivityType()
@@ -12,6 +17,7 @@ sealed class ActivityType {
     data class Suspended(
         val until: Future,
         val bufferedSuspension: Suspended? = null
+        // ^There may still be other suspensions which need to be reapplied, after the current future is resolved
     ): ActivityType()
 
     data class Active(
@@ -23,65 +29,19 @@ private typealias ActivityState = JoinSemiFlatLattice<ActivityType>
 private typealias KnownActivityState = JoinSemiFlatLattice.Value<ActivityType>
 private typealias UnknownActivityState = JoinSemiFlatLattice.Any<ActivityType>
 
-//enum class ActivityState
-//    : Joinable<ActivityState>,
-//    PartiallyOrdered<ActivityState> {
-//    Inactive,
-//    Active,
-//    Suspended,
-//
-//    InactiveOrActive,
-//    InactiveOrSuspended,
-//    ActiveOrSuspended,
-//
-//    Any;
-//
-//    override infix fun isLessOrEqualTo(rhs: ActivityState) =
-//        if (rhs == this || rhs == Any) {
-//            true
-//        }
-//
-//        else {
-//            when (this) {
-//                Inactive -> rhs == InactiveOrSuspended || rhs == InactiveOrActive
-//                Active -> rhs == ActiveOrSuspended || rhs == InactiveOrActive
-//                Suspended -> rhs == ActiveOrSuspended || rhs == InactiveOrSuspended
-//                else -> false
-//            }
-//        }
-//
-//    override infix fun join(rhs: ActivityState) =
-//        when {
-//            this isLessOrEqualTo rhs -> rhs
-//            rhs isLessOrEqualTo this -> this
-//            else -> when (this) {
-//                Inactive -> when(rhs) {
-//                    Active -> InactiveOrActive
-//                    Suspended -> InactiveOrSuspended
-//                    else -> Any
-//                }
-//
-//                Active -> when(rhs) {
-//                    Inactive -> InactiveOrActive
-//                    Suspended -> ActiveOrSuspended
-//                    else -> Any
-//                }
-//
-//                Suspended -> when(rhs) {
-//                    Inactive -> InactiveOrSuspended
-//                    Active -> ActiveOrSuspended
-//                    else -> Any
-//                }
-//
-//                else -> Any
-//            }
-//        }
-//}
-
+/**
+ * Tracks whether a class is inactive, active or suspended.
+ * Also tracks on what future a class is suspended and if there are multiple stacked suspensions.
+ */
 data class ClassActivityDomain(
     private val classStates: Map<Class, ActivityState> = emptyMap()
-): Mergeable<ClassActivityDomain>, Transferable<GlobalType, ClassActivityDomain>, Repeatable<ClassActivityDomain>
+): Mergeable<ClassActivityDomain>,
+    Transferable<GlobalType, ClassActivityDomain>,
+    Repeatable<ClassActivityDomain>
 {
+    /**
+     * A loop is considered self-contained here, iff the activity state of no class changed.
+     */
     override fun loopContained(beforeLoop: ClassActivityDomain, errorDescriptions: MutableList<String>): Boolean {
         val maybeError = areMapsWithDefaultValEqual(
             KnownActivityState(ActivityType.Inactive),
@@ -110,37 +70,44 @@ data class ClassActivityDomain(
             )
         )
 
+    /**
+     * When resolving, the resolving class becomes inactive or goes back into suspended state,
+     * if there are still non reactivated suspensions.
+     *
+     * Furthermore, classes suspended on the resolved future must be reactivated.
+     *
+     * FIXME: Search deeper layers of suspension stack for resolved futures!
+     */
     private fun transfer(label: GlobalType.Resolution): ClassActivityDomain {
         // Make resolved class inactive or recover its old suspended state
-        val classState = getClassState(label.c)
+        val update1 =
+            when (val classState = getClassState(label.c)) {
+                is KnownActivityState ->
+                    when (classState.v) {
+                        is ActivityType.Active ->
+                            if (classState.v.bufferedSuspension == null) {
+                                updateClassState(
+                                    label.c,
+                                    KnownActivityState(ActivityType.Inactive)
+                                )
+                            }
 
-        val update1 = when (classState) {
-            is KnownActivityState ->
-                when (classState.v) {
-                    is ActivityType.Active ->
-                        if (classState.v.bufferedSuspension == null) {
-                            updateClassState(
-                                label.c,
-                                KnownActivityState(ActivityType.Inactive)
-                            )
-                        }
-
-                        else {
-                            updateClassState(
-                                label.c,
-                                KnownActivityState(classState.v.bufferedSuspension)
-                            )
-                        }
-                    else -> throw TransferException(
-                        label,
-                        "Can not resolve future ${label.f.value} since ${label.c.value} is not active."
-                    )
-                }
-            else -> throw TransferException(
-                label,
-                "Can not resolve future ${label.f.value} since ${label.c.value} might not be active."
-            )
-        }
+                            else {
+                                updateClassState(
+                                    label.c,
+                                    KnownActivityState(classState.v.bufferedSuspension)
+                                )
+                            }
+                        else -> throw TransferException(
+                            label,
+                            "Can not resolve future ${label.f.value} since ${label.c.value} is not active."
+                        )
+                    }
+                else -> throw TransferException(
+                    label,
+                    "Can not resolve future ${label.f.value} since ${label.c.value} might not be active."
+                )
+            }
 
         // Reactivate classes suspended on label.f:
         val update2 =
@@ -165,13 +132,14 @@ data class ClassActivityDomain(
                     .toMap()
             )
 
-        return update2;
+        return update2
     }
 
-    private fun transfer(label: GlobalType.Initialization): ClassActivityDomain {
-        val classState = getClassState(label.c)
-
-        return when (classState) {
+    /**
+     * Whenever the protocol is initialized, the invoked class is activated
+     */
+    private fun transfer(label: GlobalType.Initialization): ClassActivityDomain =
+        when (val classState = getClassState(label.c)) {
             is KnownActivityState ->
                 when (classState.v) {
                     is ActivityType.Inactive -> updateClassState(
@@ -189,12 +157,15 @@ data class ClassActivityDomain(
                 "Can not initialize on ${label.c.value}, since it might not be inactive."
             )
         }
-    }
 
-    private fun transfer(label: GlobalType.Interaction): ClassActivityDomain {
-        val callerState = getClassState(label.caller)
-
-        return when (callerState) {
+    /**
+     * Whenever an interaction takes place, the callee must be activated.
+     *
+     * Also it must be checked, whether the caller is active to perform the
+     * interaction and the callee must be inactive.
+     */
+    private fun transfer(label: GlobalType.Interaction): ClassActivityDomain =
+        when (val callerState = getClassState(label.caller)) {
             is KnownActivityState ->
                 when (callerState.v) {
                     is ActivityType.Active -> {
@@ -233,8 +204,10 @@ data class ClassActivityDomain(
                 "${label.caller.value} can not call ${label.m.value} on ${label.callee.value}, since ${label.caller.value} might not be active."
             )
         }
-    }
 
+    /**
+     * When fetching, the fetching actor must be confirmed to be active to do so
+     */
     private fun transfer(label: GlobalType.Fetching) =
         when (getClassState(label.c)) {
             KnownActivityState(ActivityType.Active()) -> this.copy()
@@ -244,6 +217,9 @@ data class ClassActivityDomain(
             )
         }
 
+    /**
+     * An actor can only release control, if it was active before.
+     */
     private fun transfer(label: GlobalType.Release): ClassActivityDomain {
         val classState = getClassState(label.c)
 
@@ -294,6 +270,11 @@ data class ClassActivityDomain(
             }
             .filterNotNull()
 
+    /**
+     * A class is considered to be active, if one of its methods has been invoked during an
+     * initialization or interaction or if it has been reactivated after an suspension
+     * and it has not been suspended or the corresponding future been resolved since.
+     */
     fun isActive(c: Class): Boolean {
         val classState = getClassState(c)
 

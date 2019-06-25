@@ -1,9 +1,9 @@
-package de.ahbnr.sessiontypeabs.types.analysis
+package de.ahbnr.sessiontypeabs.types.analysis.exceptions
 
 import de.ahbnr.sessiontypeabs.types.GlobalType
 import java.lang.Exception
 
-class TransferException(
+class ProjectionException(
     val label: GlobalType,
     message: String
 ): Exception(message)

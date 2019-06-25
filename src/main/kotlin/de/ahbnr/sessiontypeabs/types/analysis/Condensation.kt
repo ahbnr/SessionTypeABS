@@ -4,6 +4,7 @@ import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.LocalType
 import de.ahbnr.sessiontypeabs.types.LocalTypeVisitor
 
+// L ↦ L̂, see https://doi.org/10.1007/978-3-319-47846-3_19
 fun condenseType(type: LocalType): CondensedType {
     val visitor = object: LocalTypeVisitor<CondensedType> {
         override fun visit(type: LocalType.Repetition) =
@@ -15,16 +16,10 @@ fun condenseType(type: LocalType): CondensedType {
             val maybeLeftCondensedType = type.lhs.accept(this)
             val maybeRightCondensedType = type.rhs.accept(this)
 
-            return if (maybeLeftCondensedType == CondensedType.Skip) {
-                maybeRightCondensedType
-            }
-
-            else if (maybeRightCondensedType == CondensedType.Skip) {
-                maybeLeftCondensedType
-            }
-
-            else {
-                CondensedType.Concatenation(
+            return when {
+                maybeLeftCondensedType == CondensedType.Skip -> maybeRightCondensedType
+                maybeRightCondensedType == CondensedType.Skip -> maybeLeftCondensedType
+                else -> CondensedType.Concatenation(
                     maybeLeftCondensedType,
                     maybeRightCondensedType
                 )

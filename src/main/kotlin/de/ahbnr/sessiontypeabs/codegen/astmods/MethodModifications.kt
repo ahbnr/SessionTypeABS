@@ -1,8 +1,8 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
 import de.ahbnr.sessiontypeabs.*
-import de.ahbnr.sessiontypeabs.analysis.ReactivationPoint
-import de.ahbnr.sessiontypeabs.analysis.findReactivationPoints
+import de.ahbnr.sessiontypeabs.codegen.analysis.ReactivationPoint
+import de.ahbnr.sessiontypeabs.codegen.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
 import de.ahbnr.sessiontypeabs.types.Method
 
@@ -53,7 +53,7 @@ fun introduceReactivationTransitions(methodImpl: MethodImpl, context: ClassDecl,
         .map{t -> genReactivationStateTransition(t) }
         .toTypedArray()
 
-    if (!transitionStmts.isEmpty()) {
+    if (transitionStmts.isNotEmpty()) {
         // Since we may need to construct additional variables, we need a continuous
         // counter to avoid duplicate variable names.
         var variableNameCount = 0

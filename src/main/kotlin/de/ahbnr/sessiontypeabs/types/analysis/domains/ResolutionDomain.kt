@@ -2,28 +2,54 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.*
-import de.ahbnr.sessiontypeabs.types.analysis.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.join
+import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.JoinSemiFlatLattice
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
 
 private typealias ResolutionState = JoinSemiFlatLattice<Boolean>
 private typealias UnknownResolutionState = JoinSemiFlatLattice.Any<Boolean>
 private typealias KnownResolutionState = JoinSemiFlatLattice.Value<Boolean>
 
+/**
+ * Keeps track, whether a future has been resolved yet or not.
+ */
 data class ResolutionDomain(
     private val resolutionState: Map<Future, ResolutionState> = emptyMap()
-): Mergeable<ResolutionDomain>, Transferable<GlobalType, ResolutionDomain>, Repeatable<ResolutionDomain>
+): Mergeable<ResolutionDomain>,
+    Transferable<GlobalType, ResolutionDomain>,
+    Repeatable<ResolutionDomain>
 {
+    /**
+     * A repeated global type is considered self-contained, iff the resolution state of no future that was already
+     * present before the loop changed during the iteration.
+     */
     override fun loopContained(beforeLoop: ResolutionDomain, errorDescriptions: MutableList<String>): Boolean {
-        val maybeError = areMapsWithDefaultValEqual(
-            KnownResolutionState(true),
-            resolutionState,
+        // Search for a future, whose resolution state changed after the loop
+        val maybeSelfContainednessViolation = (
+            // don't consider new futures introduced in the loop, since them being resolved does
+            // not affect self-containedness
             beforeLoop.resolutionState
+                .asSequence()
+                .find { (future, isResolved) ->
+                    !resolutionState.containsKey(future)
+                        ||
+                    resolutionState.getValue(future) != isResolved
+                }
         )
 
-        if (maybeError != null) {
-            errorDescriptions.add(
-                "Before the loop, future ${maybeError.key.value} had resolution state ${maybeError.rval}, afterwards ${maybeError.lval}."
-            )
+        if (maybeSelfContainednessViolation != null) {
+            val maybePostIterationState = resolutionState[maybeSelfContainednessViolation.key]
+
+            when (maybePostIterationState) {
+                null -> throw RuntimeException("A tracked future has been lost during execution of a loop iteration. This should never happen")
+                else ->
+                    errorDescriptions.add(
+                        "Before the loop, future ${maybeSelfContainednessViolation.key.value} had resolution state ${maybeSelfContainednessViolation.value}, afterwards $maybePostIterationState."
+                    )
+            }
 
             return false
         }
@@ -32,7 +58,7 @@ data class ResolutionDomain(
     }
 
     private fun getResolutionState(f: Future) =
-        resolutionState.getOrDefault(f, KnownResolutionState(true))
+        resolutionState.getOrDefault(f, KnownResolutionState(false))
 
     private fun updateResolutionState(f: Future, state: ResolutionState) =
         this.copy(
@@ -41,50 +67,57 @@ data class ResolutionDomain(
             )
         )
 
+    /**
+     * Check whether a future has already been resolved when it is created during an initialization.
+     */
     private fun transfer(label: GlobalType.Initialization): ResolutionDomain {
         val resState = getResolutionState(label.f)
+
         when(resState)
         {
             is KnownResolutionState ->
                 when (resState.v) {
-                    true -> return updateResolutionState(label.f,
-                        KnownResolutionState(false)
-                    )
-                    false -> throw TransferException(
+                    false -> return this.copy()
+                    true -> throw TransferException(
                         label,
-                        "Can not initialize future ${label.f.value}, since it is currently being computed."
+                        "Can not initialize future ${label.f.value}, since it has already been resolved."
                     )
                 }
             is UnknownResolutionState ->
                 throw TransferException(
                     label,
-                    "Can not initialize future ${label.f.value}, since it might currently be active."
+                    "Can not initialize future ${label.f.value}, since it might already have been resolved."
                 )
         }
     }
 
+    /**
+     * Check whether a future has already been resolved when it is created during an interaction.
+     */
     private fun transfer(label: GlobalType.Interaction): ResolutionDomain {
         val resState = getResolutionState(label.f)
         when(resState)
         {
             is KnownResolutionState ->
                 when (resState.v) {
-                    true -> return updateResolutionState(label.f,
-                        KnownResolutionState(false)
-                    )
-                    false -> throw TransferException(
+                    false -> return this.copy()
+                    true -> throw TransferException(
                         label,
-                        "Can not create future ${label.f.value} for interaction, since it is currently being computed."
+                        "Can not create future ${label.f.value} for interaction, since it has already been resolved."
                     )
                 }
             is UnknownResolutionState ->
                 throw TransferException(
                     label,
-                    "Can not create future ${label.f.value}, since it might currently be active."
+                    "Can not create future ${label.f.value}, since it might already have been resolved."
                 )
         }
     }
 
+    /**
+     * Set a future to being resolved when encountering a resolution type, but
+     * check first, that it hasn't been resolved before.
+     */
     private fun transfer(label: GlobalType.Resolution): ResolutionDomain {
         val resState = getResolutionState(label.f)
         when(resState)
@@ -107,6 +140,9 @@ data class ResolutionDomain(
         }
     }
 
+    /**
+     * A future can only be fetched, if it has been resolved before.
+     */
     private fun transfer(label: GlobalType.Fetching): ResolutionDomain {
         val resState = getResolutionState(label.f)
         when(resState)
@@ -127,6 +163,10 @@ data class ResolutionDomain(
         }
     }
 
+    /**
+     * Control can only be released until a future f is being resolved, if
+     * it hasn't been resolved already.
+     */
     private fun transfer(label: GlobalType.Release): ResolutionDomain {
         val resState = getResolutionState(label.f)
         when(resState)

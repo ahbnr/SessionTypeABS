@@ -3,20 +3,35 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.*
-import de.ahbnr.sessiontypeabs.types.analysis.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.join
+import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.JoinSemiFlatLattice
+import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.areMapsWithDefaultValEqual
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
 
-// We recording a list of active futures, since computation of a future may temporarily suspended
+// We are keeping track of a list of active futures, since computation of a future may be temporarily suspended
 // and during this time, another future can be computed.
-
 private typealias ComputationState = JoinSemiFlatLattice<List<Future>>
 private typealias UnknownComputationState = JoinSemiFlatLattice.Any<List<Future>>
 private typealias KnownComputationState = JoinSemiFlatLattice.Value<List<Future>>
 
+/**
+ * Keeps track of the future an actor is currently "computing".
+ * An actor is "computing" a future, if it was the callee during the interaction or
+ * initialization in which the future has been created and if the future has not
+ * been resolved since.
+ */
 data class ClassComputationDomain(
     private val classFutures: Map<Class, ComputationState> = emptyMap()
-): Mergeable<ClassComputationDomain>, Transferable<GlobalType, ClassComputationDomain>, Repeatable<ClassComputationDomain>
+): Mergeable<ClassComputationDomain>,
+    Transferable<GlobalType, ClassComputationDomain>,
+    Repeatable<ClassComputationDomain>
 {
+    /**
+     * A loop is considered self-contained here, iff the computation state of no class changed.
+     */
     override fun loopContained(beforeLoop: ClassComputationDomain, errorDescriptions: MutableList<String>): Boolean {
         val maybeError = areMapsWithDefaultValEqual(
             KnownComputationState(emptyList()),
@@ -57,26 +72,32 @@ data class ClassComputationDomain(
         }
     }
 
+    /**
+     * An initialization sets the future an actor is currently computing.
+     */
     private fun transfer(label: GlobalType.Initialization) =
         // NOTE trying to activate an already active class is being handled by ClassActivityDomain
         addFuture(label.c, label.f)
 
+    /**
+     * An interaction sets the future an actor is currently computing.
+     * If the actor is already computing a future, it is stacked on top of it.
+     * (This can happen, if the actors future is currently suspended)
+     */
     private fun transfer(label: GlobalType.Interaction) =
         // NOTE trying to activate an already active class is being handled by ClassActivityDomain
         addFuture(label.callee, label.f)
 
+    /**
+     * If a future is being resolved, its actor is no longer computing it, so it is removed
+     * from the stack of futures being computed by the actor.
+     */
     private fun transfer(label: GlobalType.Resolution): ClassComputationDomain {
         val computedFutures = getFutures(label.c)
 
         when (computedFutures) {
             is KnownComputationState -> {
-                val currentFuture = if (computedFutures.v.isEmpty()) {
-                    null
-                }
-
-                else {
-                    computedFutures.v.first()
-                }
+                val currentFuture = getCurrentFutureForClass(label.c)
 
                 when (currentFuture) {
                     label.f -> return updateFutures(label.c,

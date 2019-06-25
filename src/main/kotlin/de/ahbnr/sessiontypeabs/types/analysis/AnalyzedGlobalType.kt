@@ -2,6 +2,11 @@ package de.ahbnr.sessiontypeabs.types.analysis
 
 import de.ahbnr.sessiontypeabs.types.GlobalType
 
+/**
+ * Wraps global session types together with their abstract execution state
+ * produced by [execute], which provides additional information useful
+ * for validation and projection (see [project]) of a global session type.
+ */
 sealed class AnalyzedGlobalType<StateT>(
     open val type: GlobalType,
     open val preState: StateT,

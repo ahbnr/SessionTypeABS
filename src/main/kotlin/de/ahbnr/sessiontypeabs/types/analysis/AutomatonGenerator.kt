@@ -1,10 +1,15 @@
-package de.ahbnr.sessiontypeabs.types
+package de.ahbnr.sessiontypeabs.types.analysis
 
 import de.ahbnr.sessiontypeabs.SessionAutomaton
 import de.ahbnr.sessiontypeabs.Transition
 import de.ahbnr.sessiontypeabs.TransitionVerb
+import de.ahbnr.sessiontypeabs.types.CondensedType
+import de.ahbnr.sessiontypeabs.types.CondensedTypeVisitor
+import de.ahbnr.sessiontypeabs.types.Future
+import de.ahbnr.sessiontypeabs.types.Method
 
-fun genAutomaton(t: CondensedType) = genAutomaton(t, Cache())
+fun genAutomaton(t: CondensedType) =
+    genAutomaton(t, Cache())
 
 /**
  * Helper class for the automaton generator functions in this file.
@@ -204,8 +209,7 @@ private fun genAutomaton(t: CondensedType.Branching, c: Cache): SessionAutomaton
             headAutomaton.finalStates union
                 if (t.choices.size == 1) { // Reason for If see above
                     emptySet()
-                }
-                else {
+                } else {
                     headAutomaton.finalStates
                 }
         )
@@ -214,11 +218,17 @@ private fun genAutomaton(t: CondensedType.Branching, c: Cache): SessionAutomaton
 
 private fun genAutomaton(t: CondensedType, c: Cache) =
     t.accept(object: CondensedTypeVisitor<SessionAutomaton> {
-        override fun visit(type: CondensedType.Reactivation) = genAutomaton(type, c)
-        override fun visit(type: CondensedType.InvocationRecv) = genAutomaton(type, c)
-        override fun visit(type: CondensedType.Concatenation) = genAutomaton(type, c)
-        override fun visit(type: CondensedType.Repetition) = genAutomaton(type, c)
-        override fun visit(type: CondensedType.Branching) = genAutomaton(type, c)
-        override fun visit(type: CondensedType.Skip) = genAutomaton(type, c)
+        override fun visit(type: CondensedType.Reactivation) =
+            genAutomaton(type, c)
+        override fun visit(type: CondensedType.InvocationRecv) =
+            genAutomaton(type, c)
+        override fun visit(type: CondensedType.Concatenation) =
+            genAutomaton(type, c)
+        override fun visit(type: CondensedType.Repetition) =
+            genAutomaton(type, c)
+        override fun visit(type: CondensedType.Branching) =
+            genAutomaton(type, c)
+        override fun visit(type: CondensedType.Skip) =
+            genAutomaton(type, c)
     })
 

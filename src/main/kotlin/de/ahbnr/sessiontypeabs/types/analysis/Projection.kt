@@ -5,6 +5,7 @@ import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.GlobalTypeVisitor
 import de.ahbnr.sessiontypeabs.types.LocalType
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.ProjectionException
 
 fun project(type: AnalyzedGlobalType<CombinedDomain>) =
     type
@@ -99,12 +100,10 @@ class Projector(
         val leftProjection = type.leftAnalyzedType.accept(this)
         val rightProjection = type.rightAnalzedType.accept(this)
 
-        return if (leftProjection == LocalType.Skip) {
-            rightProjection
-        } else if (rightProjection == LocalType.Skip) {
-            leftProjection
-        } else {
-            LocalType.Concatenation(leftProjection, rightProjection)
+        return when {
+            leftProjection == LocalType.Skip -> rightProjection
+            rightProjection == LocalType.Skip -> leftProjection
+            else -> LocalType.Concatenation(leftProjection, rightProjection)
         }
     }
 
@@ -126,21 +125,17 @@ class Projector(
         else {
             val maybeActiveFuture = type.preState.getActiveFuture(c)
 
-            if (maybeActiveFuture != null) {
-                return LocalType.Offer(
+            when {
+                maybeActiveFuture != null -> return LocalType.Offer(
                     branches = branches,
                     f = maybeActiveFuture
                 )
-            }
-
-            else if (
                 branches.all { it == branches.first() } // TODO: Relax equality constraint
-            ) {
-                return branches.first()
-            }
-
-            else {
-                throw RuntimeException("Global branching type cannot be projected on class ${c.value}, since neither is ${c.value} actively choosing a branch, nor has it an active future at all, nor do all branches resolve to the same local type for the class, such that there is no choice.") // TODO: Use more fitting exception class
+                    -> return branches.first()
+                else -> throw ProjectionException(
+                    type.type,
+                    "Global branching type cannot be projected on class ${c.value}, since neither is ${c.value} actively choosing a branch, nor has it an active future at all, nor do all branches resolve to the same local type for the class, such that there is no choice."
+                ) // TODO: Use more fitting exception class
             }
         }
     }

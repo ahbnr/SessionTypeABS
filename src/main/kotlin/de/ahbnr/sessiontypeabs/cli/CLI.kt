@@ -4,12 +4,12 @@ import picocli.CommandLine
 
 @CommandLine.Command(
     name = "SessionTypeABS",
-    subcommands = arrayOf(
+    subcommands = [
         Compile::class,
         PrintTypes::class,
         TestGlobalTypes::class,
         PrintModel::class
-    )
+    ]
 )
 class CLI : Runnable {
     override fun run() {

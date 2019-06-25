@@ -15,7 +15,7 @@ const val schedulerLibModuleName = "SessionTypeABS.SchedulerHelpers"
 // Types
 fun registerT() =
     UnresolvedTypeUse(
-        "SessionTypeABS.SchedulerHelpers.Register",
+        "$schedulerLibModuleName.Register",
         List() //Annotations
     )
 
@@ -57,7 +57,7 @@ fun processParameter() =
 
 fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>) =
     FnApp(
-        "SessionTypeABS.SchedulerHelpers.matchNamesOrRegisters",
+        "$schedulerLibModuleName.matchNamesOrRegisters",
         List(
             setC(*whitelist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
             setC(*registers.map { register -> VarUse(registerIdentifier(register)) }.toTypedArray()),
@@ -67,7 +67,7 @@ fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>) =
 
 fun applyProtocol(protocol: ParFnAppParam, participants: Set<String>, queue: PureExp) =
     callHigherOrderFun(
-        "SessionTypeABS.SchedulerHelpers.applyProtocol",
+        "$schedulerLibModuleName.applyProtocol",
         protocol,
         setC(*participants.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
         queue
@@ -75,14 +75,14 @@ fun applyProtocol(protocol: ParFnAppParam, participants: Set<String>, queue: Pur
 
 fun forceInit(schedulerFun: ParFnAppParam, queue: PureExp) =
     callHigherOrderFun(
-        "SessionTypeABS.SchedulerHelpers.forceInit",
+        "$schedulerLibModuleName.forceInit",
         schedulerFun,
         queue
     )
 
 fun selectAsideBlacklist(blacklist: Set<String>, queue: PureExp) =
     FnApp(
-        "SessionTypeABS.SchedulerHelpers.selectAsideBlacklist",
+        "$schedulerLibModuleName.selectAsideBlacklist",
         List(
             setC(*blacklist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
             queue

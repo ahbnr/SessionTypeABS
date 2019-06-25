@@ -3,10 +3,12 @@ package de.ahbnr.sessiontypeabs
 import de.ahbnr.sessiontypeabs.codegen.astmods.*
 import de.ahbnr.sessiontypeabs.types.*
 import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedGlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.analyze
+import de.ahbnr.sessiontypeabs.types.analysis.execute
 import de.ahbnr.sessiontypeabs.types.analysis.condenseType
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
 import de.ahbnr.sessiontypeabs.types.analysis.project
+import de.ahbnr.sessiontypeabs.types.parser.parseFile
+import de.ahbnr.sessiontypeabs.types.parser.parseGlobalTFile
 import org.abs_models.backend.erlang.ErlangBackend
 import org.abs_models.frontend.parser.Main
 import java.io.File
@@ -41,7 +43,7 @@ fun checkForMissingParticipants(protocols: List<AnalyzedGlobalType<CombinedDomai
     val actualParticipants= modLog.modifiedClasses.map{ Class(it.qualifiedName) }
     val difference = expectedParticipants.minus(actualParticipants)
 
-    if (!difference.isEmpty()) {
+    if (difference.isNotEmpty()) {
         // TODO use better exception type
         throw RuntimeException("The following classes are participating in the protocol, but could not be found in the supplied ABS model: $difference")
     }
@@ -52,7 +54,7 @@ fun compileGlobalTypes(absSourceFileNames: Iterable<String>, typeSourceFileNames
     val globalTypes = parseGlobalTypes(typeSourceFileNames)
 
     val analysis = globalTypes
-        .map{ gtype -> analyze(CombinedDomain(), gtype) }
+        .map{ gtype -> execute(CombinedDomain(), gtype) }
 
     ensureProtocolsAreDisjunct(analysis)
 
@@ -75,13 +77,13 @@ fun parseModel(absSourceFileNames: Iterable<String>): Model {
     val helperLib = File(ClassLoader.getSystemClassLoader().getResource("schedulerlib.abs").file)
     val files = absSourceFileNames.map{arg -> File(arg)} + listOf(helperLib)
 
-    return Main.parseFiles(true, files);
+    return Main.parseFiles(true, files)
 }
 
 fun parseTypes(typeSourceFileNames: Iterable<String>): Map<Class, CondensedType> =
     typeSourceFileNames
         .map(::parseFile)
-        .fold(emptyMap<Class, CondensedType>()) { // Merge type information from each file
+        .fold(emptyMap()) { // Merge type information from each file
                 acc, element -> acc.plus(element)
         }
 
@@ -96,7 +98,7 @@ fun ensureProtocolsAreDisjunct(analyzedGlobalTypes: List<AnalyzedGlobalType<Comb
         for ((innerIndex, otherParticipantSet) in participants.withIndex()) {
             if (outerIndex != innerIndex) { // Dont compare a set to itself
                 val intersection = participantSet intersect otherParticipantSet
-                if (!intersection.isEmpty()) {
+                if (intersection.isNotEmpty()) {
                     throw RuntimeException("If multiple protocols are used, no class may participate in more than 1 protocol. The following classes are participating in more than 1 protocol.") // TODO: Better exception
                 }
             }

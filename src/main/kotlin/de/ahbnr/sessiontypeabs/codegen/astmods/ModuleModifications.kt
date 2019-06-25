@@ -1,9 +1,10 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
 import de.ahbnr.sessiontypeabs.codegen.scheduler
+import de.ahbnr.sessiontypeabs.codegen.schedulerLibModuleName
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
-import de.ahbnr.sessiontypeabs.types.genAutomaton
+import de.ahbnr.sessiontypeabs.types.analysis.genAutomaton
 
 import org.abs_models.frontend.ast.*
 
@@ -24,7 +25,7 @@ fun enforceSessionTypesOnModule(
     classToType: Map<Class, CondensedType>
 ): ModificationLog {
     // TODO: Check if import is already present. Only import, if a class is present for which types are available
-    m.addImport(StarImport("SessionTypeABS.SchedulerHelpers"))
+    m.addImport(StarImport(schedulerLibModuleName))
 
     // We need to have an unique name for each ABS scheduler function we generate in the module.
     // Therefore we derive them from a counter.
@@ -36,7 +37,7 @@ fun enforceSessionTypesOnModule(
         val qualifiedClass = Class(decl.qualifiedName)
 
         if (decl is ClassDecl && classToType.contains(qualifiedClass)) {
-            val type = classToType[qualifiedClass]!!
+            val type = classToType.getValue(qualifiedClass)
             val automaton = genAutomaton(type)
 
             val schedulerName = "sched" + schedulerNameCounter++

@@ -1,6 +1,7 @@
-package de.ahbnr.sessiontypeabs.types
+package de.ahbnr.sessiontypeabs.types.parser
 
 import de.ahbnr.sessiontypeabs.antlr.*
+import de.ahbnr.sessiontypeabs.types.*
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
@@ -36,7 +37,7 @@ fun parseFile(fileName: String): Map<Class, CondensedType> {
 
         override fun visitBranchT(ctx: LocalTypesParser.BranchTContext) =
             CondensedType.Branching(
-                ctx.branch().localType().map{subCtx -> subCtx.accept(this)}
+                ctx.branch().localType().map { subCtx -> subCtx.accept(this) }
             )
     }
 
@@ -62,17 +63,17 @@ fun parseGlobalTFile(fileName: String): GlobalType {
     val typeVisitor = object: GlobalTypesBaseVisitor<GlobalType>() {
         override fun visitInitialization(ctx: GlobalTypesParser.InitializationContext) =
             GlobalType.Initialization(
-                f=Future(ctx.init().future.text),
-                c=Class(ctx.init().classId.text),
-                m=Method(ctx.init().method.text)
+                f = Future(ctx.init().future.text),
+                c = Class(ctx.init().classId.text),
+                m = Method(ctx.init().method.text)
             )
 
         override fun visitInteraction(ctx: GlobalTypesParser.InteractionContext) =
             GlobalType.Interaction(
-                caller=Class(ctx.interact().caller.text),
-                f=Future(ctx.interact().future.text),
-                callee=Class(ctx.interact().callee.text),
-                m=Method(ctx.interact().method.text)
+                caller = Class(ctx.interact().caller.text),
+                f = Future(ctx.interact().future.text),
+                callee = Class(ctx.interact().callee.text),
+                m = Method(ctx.interact().method.text)
             )
 
         override fun visitRepetition(ctx: GlobalTypesParser.RepetitionContext) =
@@ -88,26 +89,26 @@ fun parseGlobalTFile(fileName: String): GlobalType {
 
         override fun visitFetching(ctx: GlobalTypesParser.FetchingContext) =
             GlobalType.Fetching(
-                c=Class(ctx.fetch().classId.text),
-                f=Future(ctx.fetch().future.text)
+                c = Class(ctx.fetch().classId.text),
+                f = Future(ctx.fetch().future.text)
             )
 
         override fun visitResolution(ctx: GlobalTypesParser.ResolutionContext) =
             GlobalType.Resolution(
-                c=Class(ctx.resolve().classId.text),
-                f=Future(ctx.resolve().future.text)
+                c = Class(ctx.resolve().classId.text),
+                f = Future(ctx.resolve().future.text)
             )
 
         override fun visitRelease(ctx: GlobalTypesParser.ReleaseContext) =
             GlobalType.Release(
-                c=Class(ctx.releaseR().classId.text),
-                f=Future(ctx.releaseR().future.text)
+                c = Class(ctx.releaseR().classId.text),
+                f = Future(ctx.releaseR().future.text)
             )
 
         override fun visitBranching(ctx: GlobalTypesParser.BranchingContext) =
             GlobalType.Branching(
-                c=Class(ctx.branch().classId.text),
-                branches=ctx.branch().globalType().map{subCtx -> subCtx.accept(this)}
+                c = Class(ctx.branch().classId.text),
+                branches = ctx.branch().globalType().map { subCtx -> subCtx.accept(this) }
             )
     }
 
