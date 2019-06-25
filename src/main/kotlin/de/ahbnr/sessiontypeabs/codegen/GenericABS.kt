@@ -8,7 +8,9 @@ import org.abs_models.frontend.ast.*
 
 // Types
 fun processT() =
-    DataTypeUse("Process", List())
+    DataTypeUse("ABS.Scheduler.Process", List())
+
+// TODO Use fully qualified names everywhere
 
 fun maybeT(param: TypeUse) =
     ParametricDataTypeUse(

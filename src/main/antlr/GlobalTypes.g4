@@ -12,13 +12,13 @@ globalType:
     | resolve                           # Resolution
     ;
 
-init: '0' '-' future=IDENTIFIER '->' classId=qualified_class_identifier '.' method=IDENTIFIER;
-interact: caller=qualified_class_identifier '-' future=IDENTIFIER '->' callee=qualified_class_identifier '.' method=IDENTIFIER;
+init: '0' '-' future=IDENTIFIER '->' classId=qualified_class_identifier ':' method=IDENTIFIER;
+interact: caller=qualified_class_identifier '-' future=IDENTIFIER '->' callee=qualified_class_identifier ':' method=IDENTIFIER;
 releaseR: 'Rel('classId=qualified_class_identifier ',' future=IDENTIFIER ')';
 repeat: '(' repeatedType=globalType ')*';
 branch: classId=qualified_class_identifier '{' (globalType (',' globalType)*)? '}';
-fetch: classId=qualified_class_identifier 'fetch' future=IDENTIFIER;
-resolve: classId=qualified_class_identifier 'resolve' future=IDENTIFIER;
+fetch: classId=qualified_class_identifier 'fetches' future=IDENTIFIER;
+resolve: classId=qualified_class_identifier 'resolves' future=IDENTIFIER;
 
 qualified_class_identifier: (TYPE_IDENTIFIER '.')* TYPE_IDENTIFIER ;
 

@@ -1,0 +1,58 @@
+module Complex;
+
+interface DI {
+  Int d();
+}
+
+class D implements DI {
+  Int d() {
+    println("d");
+    return 42;
+  }
+}
+
+interface OI {
+    Unit m1();
+    Unit m3();
+}
+
+class O implements OI {
+    Unit m1() {
+        println("m1");
+
+        DI d = new D();
+        Int x = await d!d();
+    }
+
+    Unit m3() {
+        println("m3");
+    }
+}
+
+interface PI {
+    Unit main();
+}
+
+class P implements PI {
+  Unit main() {
+    OI o = new O();
+
+    foreach (i in list[1, 2, 3]) {
+      println("Iteration i = " + toString(i));
+
+      Fut<Unit> f2 = o!m3();
+      Fut<Unit> f  = o!m1();
+
+      await f? & f2?;
+    }
+  }
+}
+
+{
+    println("Start\n");
+
+    PI p = new P();
+    p.main();
+
+    println("\nStop");
+}

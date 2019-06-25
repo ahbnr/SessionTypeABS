@@ -24,9 +24,6 @@ fun enforceSessionTypesOnModule(
     m: ModuleDecl,
     classToType: Map<Class, CondensedType>
 ): ModificationLog {
-    // TODO: Check if import is already present. Only import, if a class is present for which types are available
-    m.addImport(StarImport(schedulerLibModuleName))
-
     // We need to have an unique name for each ABS scheduler function we generate in the module.
     // Therefore we derive them from a counter.
     var schedulerNameCounter = 0
@@ -52,6 +49,13 @@ fun enforceSessionTypesOnModule(
         }
     }
 
+    if (modLog.allDecls().isNotEmpty()) {
+        // This module has been modified, therefore we have to include the necessary imports
+        m.addImport(StarImport(schedulerLibModuleName))
+        m.addImport(StarImport("ABS.Scheduler"))
+        // FIXME only import this stuff if it is not already imported.
+    }
+
     return modLog
 }
 
@@ -67,3 +71,4 @@ class ModificationLog(
     fun allDecls(): List<Decl> =
         modifiedClasses.plus(createdSchedulers)
 }
+

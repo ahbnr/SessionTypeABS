@@ -25,7 +25,7 @@ class PrintModel : Runnable {
             }
 
             val typeBuild = buildTypes(typeSourceFiles)
-            val modelBuild = buildModel(absSourceFiles, typeBuild)
+            val modelBuild = buildModel(absSourceFiles, typeBuild, noChecks = true)
 
             val printer = PrintWriter(System.out)
             val formatter = DefaultABSFormatter(printer)

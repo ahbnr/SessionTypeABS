@@ -23,17 +23,21 @@ fun parseModel(absSourceFileNames: Iterable<String>): Model {
  * Parses the ABS source files and applies the given local Session Types on the
  * model, such that it complies to the protocol induced by them at runtime.
  */
-fun buildModel(absSourceFileNames: Iterable<String>, typeBuild: TypeBuild): ModelBuild {
+fun buildModel(absSourceFileNames: Iterable<String>, typeBuild: TypeBuild, noChecks: Boolean = false): ModelBuild {
     val model = parseModel(absSourceFileNames)
-    checkAndRewriteModel(model)
+    if (!noChecks) {
+        checkAndRewriteModel(model)
+    }
 
     // Modify ABS model
     val modLog = applyTypesToModel(model, typeBuild.condensedTypes)
 
-    // Check whether all participants could be modified (none was missing in the model)
-    checkForMissingParticipants(typeBuild.analyzedProtocols, modLog)
+    if (!noChecks) {
+        // Check whether all participants could be modified (none was missing in the model)
+        checkForMissingParticipants(typeBuild.analyzedProtocols, modLog)
 
-    checkAndRewriteModel(model)
+        checkAndRewriteModel(model)
+    }
 
     return ModelBuild(
         model = model,
