@@ -2,9 +2,11 @@ package de.ahbnr.sessiontypeabs.compiler
 
 import de.ahbnr.sessiontypeabs.codegen.astmods.ModificationLog
 import de.ahbnr.sessiontypeabs.codegen.astmods.enforceSessionTypesOnModel
+import de.ahbnr.sessiontypeabs.compiler.exceptions.ABSException
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
 import org.abs_models.backend.erlang.ErlangBackend
+import org.abs_models.common.CompilerCondition
 import org.abs_models.frontend.ast.Model
 import org.abs_models.frontend.parser.Main
 import java.io.File
@@ -23,6 +25,7 @@ fun parseModel(absSourceFileNames: Iterable<String>): Model {
  */
 fun buildModel(absSourceFileNames: Iterable<String>, typeBuild: TypeBuild): ModelBuild {
     val model = parseModel(absSourceFileNames)
+    checkAndRewriteModel(model)
 
     // Modify ABS model
     val modLog = applyTypesToModel(model, typeBuild.condensedTypes)
@@ -56,8 +59,23 @@ fun checkAndRewriteModel(model: Model) {
     val parser = Main()
     parser.analyzeFlattenAndRewriteModel(model)
 
-    if (model.hasParserErrors() || model.hasErrors() || model.hasTypeErrors()) {
-        System.out.println("Parsing failed.")
+    handleModelErrors(model)
+}
+
+fun handleModelErrors(model: Model) {
+    when {
+        model.hasParserErrors() -> throw ABSException(
+            errors = model.parserErrors,
+            message = "The ABS compiler reported parser errors."
+        )
+        model.hasErrors() -> throw ABSException(
+            errors = model.errors.filterIsInstance<CompilerCondition>(),
+            message = "The ABS compiler reported errors."
+        )
+        model.hasTypeErrors() -> throw ABSException(
+            errors = model.typeErrors.filterIsInstance<CompilerCondition>(),
+            message = "The ABS compiler reported type errors."
+        )
     }
 }
 
