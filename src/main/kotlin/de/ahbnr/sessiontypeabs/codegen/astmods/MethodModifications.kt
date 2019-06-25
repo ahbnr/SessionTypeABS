@@ -4,6 +4,7 @@ import de.ahbnr.sessiontypeabs.*
 import de.ahbnr.sessiontypeabs.analysis.ReactivationPoint
 import de.ahbnr.sessiontypeabs.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
+import de.ahbnr.sessiontypeabs.types.Method
 
 import org.abs_models.frontend.ast.*
 
@@ -22,7 +23,7 @@ import kotlin.IllegalArgumentException
  */
 fun introduceInvocREvStateTransitions(methodImpl: MethodImpl, automaton: SessionAutomaton) {
     val invocTransitions = automaton
-        .transitionsForMethod(methodImpl.methodSigNoTransform.name)
+        .transitionsForMethod(Method(methodImpl.methodSigNoTransform.name))
         .filter{t -> t.verb is TransitionVerb.InvocREv }
         .toSet()
 
@@ -42,7 +43,7 @@ fun introduceInvocREvStateTransitions(methodImpl: MethodImpl, automaton: Session
  * [genSuspendReplacementForReactivation].
  */
 fun introduceReactivationTransitions(methodImpl: MethodImpl, context: ClassDecl, automaton: SessionAutomaton) {
-    val methodName = methodImpl.methodSigNoTransform.name
+    val methodName = Method(methodImpl.methodSigNoTransform.name)
 
     // Gather all reactivation statements concerning the method and build the
     // corresponding state transition ASTs

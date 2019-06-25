@@ -1,3 +1,3 @@
 package de.ahbnr.sessiontypeabs.types
 
-inline class Future(val value: String)
+inline class Class(val value: String)

@@ -1,3 +1,3 @@
 package de.ahbnr.sessiontypeabs.types
 
-typealias Method = String
+inline class Method(val value: String)

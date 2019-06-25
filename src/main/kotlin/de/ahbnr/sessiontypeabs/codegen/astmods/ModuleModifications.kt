@@ -1,7 +1,8 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
 import de.ahbnr.sessiontypeabs.codegen.scheduler
-import de.ahbnr.sessiontypeabs.types.LocalType
+import de.ahbnr.sessiontypeabs.types.Class
+import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.genAutomaton
 
 import org.abs_models.frontend.ast.*
@@ -20,8 +21,8 @@ import org.abs_models.frontend.ast.*
  */
 fun enforceSessionTypesOnModule(
     m: ModuleDecl,
-    classToType: Map<String, LocalType>
-): List<Decl> {
+    classToType: Map<Class, CondensedType>
+): ModificationLog {
     // TODO: Check if import is already present. Only import, if a class is present for which types are available
     m.addImport(StarImport("SessionTypeABS.SchedulerHelpers"))
 
@@ -29,24 +30,39 @@ fun enforceSessionTypesOnModule(
     // Therefore we derive them from a counter.
     var schedulerNameCounter = 0
 
-    val modifiedDecls = mutableListOf<Decl>()
+    val modLog = ModificationLog()
 
     for (decl in m.decls) {
-        if (decl is ClassDecl && classToType.contains(decl.qualifiedName)) {
-            val type = classToType[decl.qualifiedName]!!
+        val qualifiedClass = Class(decl.qualifiedName)
+
+        if (decl is ClassDecl && classToType.contains(qualifiedClass)) {
+            val type = classToType[qualifiedClass]!!
             val automaton = genAutomaton(type)
 
             val schedulerName = "sched" + schedulerNameCounter++
             val scheduler = scheduler(schedulerName, automaton)
 
             m.addDecl(scheduler)
-            modifiedDecls.add(scheduler)
+            modLog.createdSchedulers.add(scheduler)
 
             enforceAutomatonOnClass(decl, automaton, schedulerName)
 
-            modifiedDecls.add(decl)
+            modLog.modifiedClasses.add(decl)
         }
     }
 
-    return modifiedDecls
+    return modLog
+}
+
+class ModificationLog(
+    val modifiedClasses: MutableList<ClassDecl> = mutableListOf(),
+    val createdSchedulers: MutableList<FunctionDecl> = mutableListOf()
+) {
+    fun add(rhs: ModificationLog) {
+        modifiedClasses.addAll(rhs.modifiedClasses)
+        createdSchedulers.addAll(rhs.createdSchedulers)
+    }
+
+    fun allDecls(): List<Decl> =
+        modifiedClasses.plus(createdSchedulers)
 }

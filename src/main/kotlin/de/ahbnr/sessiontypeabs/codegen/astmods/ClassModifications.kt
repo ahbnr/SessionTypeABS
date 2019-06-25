@@ -6,6 +6,7 @@ import de.ahbnr.sessiontypeabs.codegen.nothingC
 import de.ahbnr.sessiontypeabs.codegen.registerT
 import de.ahbnr.sessiontypeabs.codegen.schedulerAnnotation
 import de.ahbnr.sessiontypeabs.codegen.*
+import de.ahbnr.sessiontypeabs.types.Method
 
 import org.abs_models.frontend.ast.*
 
@@ -122,7 +123,7 @@ fun introduceInvocREvStateTransitions(clazz: ClassDecl, automaton: SessionAutoma
 
     //INFO: Use lookupMethod() instead?
     clazz.methodsNoTransform.forEach {
-        if (affectedMethods.contains(it.methodSigNoTransform.name)) {
+        if (affectedMethods.contains(Method(it.methodSigNoTransform.name))) {
             introduceInvocREvStateTransitions(it, automaton)
         }
     }
@@ -140,7 +141,7 @@ fun introduceReactivationTransitions(classDecl: ClassDecl, automaton: SessionAut
 
     classDecl
         .methodsNoTransform
-        .filter{m -> affectedMethods.contains(m.methodSigNoTransform.name)}
+        .filter{m -> affectedMethods.contains(Method(m.methodSigNoTransform.name))}
         .forEach {
             introduceReactivationTransitions(it, classDecl, automaton)
         }

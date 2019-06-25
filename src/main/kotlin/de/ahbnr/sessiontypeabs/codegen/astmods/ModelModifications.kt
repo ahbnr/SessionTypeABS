@@ -1,11 +1,9 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
-import de.ahbnr.sessiontypeabs.types.LocalType
+import de.ahbnr.sessiontypeabs.types.Class
+import de.ahbnr.sessiontypeabs.types.CondensedType
 
-import org.abs_models.backend.prettyprint.DefaultABSFormatter
 import org.abs_models.frontend.ast.*
-
-import java.io.PrintWriter
 
 /**
  * This file contains functions which allow to modify an ABS model, such that it adheres to a set of Session Types
@@ -21,13 +19,13 @@ import java.io.PrintWriter
  */
 fun enforceSessionTypesOnModel(
     model: Model,
-    classToType: Map<String, LocalType>
-): List<Decl> {
-    val modifiedDecls = mutableListOf<Decl>()
+    classToType: Map<Class, CondensedType>
+): ModificationLog {
+    val modLog = ModificationLog()
 
     for (m in model.moduleDecls) {
-        modifiedDecls.addAll(enforceSessionTypesOnModule(m, classToType))
+        modLog.add(enforceSessionTypesOnModule(m, classToType))
     }
 
-    return modifiedDecls
+    return modLog
 }

@@ -1,9 +1,6 @@
 package de.ahbnr.sessiontypeabs.cli
 
 import de.ahbnr.sessiontypeabs.parseTypes
-import de.ahbnr.sessiontypeabs.types.LocalType
-import de.ahbnr.sessiontypeabs.types.parseFile
-import picocli.CommandLine
 
 import picocli.CommandLine.*
 

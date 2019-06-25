@@ -1,6 +1,7 @@
 package de.ahbnr.sessiontypeabs.codegen
 
 import de.ahbnr.sessiontypeabs.*
+import de.ahbnr.sessiontypeabs.types.Method
 import org.abs_models.frontend.ast.*
 
 /**
@@ -51,7 +52,7 @@ fun scheduler(name: String, automaton: SessionAutomaton) =
                 List(queueParameter()),
                 stateSwitchCase(stateFieldIdentifier, automaton)
             ),
-            automaton.affectedMethods(),
+            automaton.affectedMethods().map{it.value}.toSet(),
             VarUse(schedulerFunQueueParamIdentifier)
         )
     )
@@ -102,7 +103,7 @@ private fun stateSwitchCase(stateParam: String, automaton: SessionAutomaton) =
  */
 private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomaton): FnApp {
     val transitionVerbs = automaton.transitionsForState(state).map{t -> t.verb}
-    val methodNames = mutableSetOf<String>()
+    val methodNames = mutableSetOf<Method>()
     val registers = mutableSetOf<Int>()
 
     transitionVerbs.forEach {
@@ -112,6 +113,6 @@ private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomato
         }
     }
 
-    return matchNamesOrRegisters(methodNames, registers)
+    return matchNamesOrRegisters(methodNames.map{it.value}.toSet(), registers)
 }
 

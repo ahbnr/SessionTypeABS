@@ -1,14 +1,16 @@
 package de.ahbnr.sessiontypeabs
 
+import de.ahbnr.sessiontypeabs.types.Method
+
 // data TransitionVerb = InvocREv String register | ReactEv ...
 sealed class TransitionVerb {
     class InvocREv(
-        val method: String,
+        val method: Method,
         val register: Int
     ): TransitionVerb()
 
     class ReactEv(
-        val method: String,
+        val method: Method,
         val register: Int
     ): TransitionVerb()
 }
@@ -38,7 +40,7 @@ class SessionAutomaton(
             .map{v -> v.method}
             .toSet()
 
-    fun transitionsForMethod(method: String) =
+    fun transitionsForMethod(method: Method) =
         Delta
             .filter{t ->
                 when (t.verb) {
