@@ -2,13 +2,14 @@ package de.ahbnr.sessiontypeabs.types.parser
 
 import de.ahbnr.sessiontypeabs.antlr.*
 import de.ahbnr.sessiontypeabs.types.*
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.*
+import org.antlr.v4.runtime.misc.ParseCancellationException
 
 fun parseGlobalType(fileName: String): GlobalType {
     val input = CharStreams.fromFileName(fileName)
     val lexer = GlobalTypesLexer(input)
     val parser = GlobalTypesParser(CommonTokenStream(lexer))
+        parser.errorHandler = BailErrorStrategy()
 
     fun buildFileContext(ctx: GlobalTypesParser.GlobalTypeContext) =
         FileContext(
@@ -77,6 +78,25 @@ fun parseGlobalType(fileName: String): GlobalType {
             )
     }
 
-    return(parser.globalType().accept(typeVisitor))
+    try {
+        return parser.globalType().accept(typeVisitor)
+    }
+
+    catch (exception: ParseCancellationException) {
+        val originalException = exception.cause as RecognitionException
+        val vocabulary = parser.vocabulary
+        val expectedTokens = originalException
+            .expectedTokens
+            ?.toArray()
+            ?.map { tokenId -> vocabulary.getDisplayName(tokenId) }
+            ?: "Could not determine expected tokens."
+
+        throw ParserException(
+            fileName = fileName,
+            line = originalException.offendingToken.line,
+            column = originalException.offendingToken.charPositionInLine,
+            message = "Failed to parse Session Types.\n\nFound: ${originalException.offendingToken.text}.\nExpected one of: $expectedTokens."
+        )
+    }
 }
 
