@@ -10,10 +10,17 @@ import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
 import de.ahbnr.sessiontypeabs.types.analysis.execute
 import de.ahbnr.sessiontypeabs.types.analysis.project
 import de.ahbnr.sessiontypeabs.types.parser.parseGlobalType
+import java.io.File
+import java.io.FileInputStream
 
 fun parseTypes(typeSourceFileNames: Iterable<String>): List<GlobalType> =
     typeSourceFileNames
-        .map(::parseGlobalType)
+        .map{ fileName ->
+            val file = File(fileName)
+            val inputStream = FileInputStream(file)
+
+            parseGlobalType(inputStream, file.path)
+        }
 
 /**
  * Parses global Session Types, validates them, projects them onto the

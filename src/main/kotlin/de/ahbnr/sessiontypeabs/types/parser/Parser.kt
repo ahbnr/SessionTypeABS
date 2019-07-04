@@ -4,9 +4,10 @@ import de.ahbnr.sessiontypeabs.antlr.*
 import de.ahbnr.sessiontypeabs.types.*
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import java.io.InputStream
 
-fun parseGlobalType(fileName: String): GlobalType {
-    val input = CharStreams.fromFileName(fileName)
+fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>"): GlobalType {
+    val input = CharStreams.fromStream(inputStream)
     val lexer = GlobalTypesLexer(input)
     val parser = GlobalTypesParser(CommonTokenStream(lexer))
         parser.errorHandler = BailErrorStrategy()
