@@ -9,11 +9,27 @@ import org.abs_models.backend.erlang.ErlangBackend
 import org.abs_models.common.CompilerCondition
 import org.abs_models.frontend.ast.Model
 import org.abs_models.frontend.parser.Main
+import org.apache.commons.io.FileUtils
 import java.io.File
 import java.util.*
 
+/**
+ * It is not possible to create a readable file object from jar resources.
+ * Thus we have to extract the scheduler library into a temporary file, because
+ * the ABS compiler interface requires a file object.
+ */
+fun getSchedulerLib(): File {
+    val inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("schedulerlib.abs")
+    val file = File.createTempFile("schedulerlib", ".abs")
+
+    FileUtils.copyInputStreamToFile(inputStream, file)
+
+    return file
+}
+
 fun parseModel(absSourceFileNames: Iterable<String>): Model {
-    val helperLib = File(ClassLoader.getSystemClassLoader().getResource("schedulerlib.abs").file)
+    //val helperLib = File(ClassLoader.getSystemClassLoader().getResource("schedulerlib.abs").file)
+    val helperLib = getSchedulerLib()
     val files = absSourceFileNames.map{arg -> File(arg)} + listOf(helperLib)
 
     return Main.parseFiles(true, files)

@@ -26,6 +26,8 @@ dependencies {
 
     implementation 'info.picocli:picocli:4.0.0-beta-2'
 
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+
     // set antlr version
     antlr "org.antlr:antlr4:4.7"
 }
