@@ -2,9 +2,54 @@ package de.ahbnr.sessiontypeabs.types.parser
 
 import de.ahbnr.sessiontypeabs.antlr.*
 import de.ahbnr.sessiontypeabs.types.*
+import org.abs_models.frontend.antlr.parser.ABSLexer
+import org.abs_models.frontend.antlr.parser.ABSParser
+import org.abs_models.frontend.antlr.parser.CreateJastAddASTListener
+import org.abs_models.frontend.antlr.parser.SyntaxErrorCollector
+import org.abs_models.frontend.parser.ASTPreProcessor
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.antlr.v4.runtime.tree.ParseTreeWalker
 import java.io.InputStream
+
+fun parsePostCondition(postCondition: String) {
+    try {
+        //SyntaxErrorCollector errorlistener = new SyntaxErrorCollector(file, raiseExceptions);
+
+        val input = ANTLRInputStream(postCondition)
+        val lexer = ABSLexer(input)
+
+        // lexer.removeErrorListeners();
+        // lexer.addErrorListener(errorlistener)
+
+        val tokens = CommonTokenStream(lexer)
+        val aparser = ABSParser(tokens)
+
+        //aparser.removeErrorListeners();
+        //aparser.addErrorListener(errorlistener);
+
+        val tree = aparser.pure_exp()
+
+        //if (errorlistener.parserErrors.isEmpty()) {
+            val walker = ParseTreeWalker()
+            val l = CreateJastAddASTListener(null) // FIXME correct filename
+            walker.walk(l, tree)
+
+
+            // Preprocessing should have not any effect on pure expressions, but we keep the step just in case
+            val u = ASTPreProcessor().preprocess(l.compilationUnit)
+
+            return u.
+        //} else {
+        //    String path = "<unknown path>";
+        //    if (file != null) path = file.getPath();
+        //    @SuppressWarnings("rawtypes")
+        //    CompilationUnit u = new CompilationUnit(path,new List(),new List(),new List(),new Opt(),new List(),new List(),new List());
+        //    u.setParserErrors(errorlistener.parserErrors);
+        //    return u;
+        //}
+    }
+}
 
 fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>"): GlobalType {
     val input = CharStreams.fromStream(inputStream)

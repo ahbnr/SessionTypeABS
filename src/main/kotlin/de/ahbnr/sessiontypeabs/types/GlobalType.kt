@@ -24,6 +24,7 @@ sealed class GlobalType() {
         val f: Future,
         val callee: Class,
         val m: Method,
+        val postcondition: String? = null,
         override val fileContext: FileContext? = null
     ): GlobalType()
 
