@@ -57,7 +57,7 @@ class Test {
         )
 
         println(result.protocol)
-        //println(result.model)
+        println(result.model)
 
         val modelFile = saveInTempFile("generated", "abs", result.model)
 

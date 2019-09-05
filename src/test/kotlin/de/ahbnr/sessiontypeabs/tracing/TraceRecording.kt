@@ -40,7 +40,7 @@ fun processOutputToTraces(output: CharSequence) =
         .mapNotNull { toTraceFragment(it) }
         .groupBy { it.actor }
 
-fun runModel(executablePath: String, timeoutSeconds: Long = 60): CharSequence {
+fun runModel(executablePath: String, timeoutSeconds: Long = 500): CharSequence { // Default timeout: 5min
     val pb = NuProcessBuilder(listOf(executablePath))
 
     val processHandler = object: NuAbstractProcessHandler() {

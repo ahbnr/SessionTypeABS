@@ -36,7 +36,7 @@ fun applyLoops(loops: List<LoopDescription>, future: Future, subtree: ProgramTre
 
             val recursionResult = applyLoops(loops.tail, future, subtree)
 
-            if (excluded.contains(future)) {
+            if (future in excluded) {
                 recursionResult.copy(
                     modifiedLoops = listOf(loops.head) + recursionResult.modifiedLoops
                 )
@@ -133,7 +133,7 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
 
     val loopsApplication = applyLoops(
         loops = localData.loops,
-        future = future,
+        future = parentCall.future,
         subtree = ProgramTree.Split(
             listOf(
                 ProgramTree.Call(
@@ -242,6 +242,107 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         )
 }
 
+// Read
+
+/**
+ * ∃(A, f, ·, ·) ∈ Calls.
+ *   ∃(·, f', A, ·) in Calls.
+ *       f  ∈ Resolved
+ *     ∧ f' ∉ Resolved
+ *     ∧ f' ∉ Suspended
+ */
+fun guardRead(globalData: GeneratorState, localData: SeedData) =
+    localData
+        .calls
+        .any { parentCall ->
+               parentCall.future !in localData.resolvedFutures
+            && parentCall.future !in globalData.suspendedFutures
+            && localData.calls.any {potentialSubCall ->
+                      potentialSubCall.caller == parentCall.callee
+                   && potentialSubCall.future in localData.resolvedFutures
+               }
+        }
+
+fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
+    val parentCallCandidates = localData
+        .calls
+        .filter {parentCall ->
+               parentCall.future !in localData.resolvedFutures
+            && parentCall.future !in globalData.suspendedFutures
+            && localData.calls.any {potentialSubCall ->
+                   potentialSubCall.caller == parentCall.callee
+                && potentialSubCall.future in localData.resolvedFutures
+            }
+        }
+
+    // FIXME Check if callCandidates is empty
+
+    val parentCall = randomSource.selectFromList(parentCallCandidates)!! // FIXME throw proper exception
+
+    val finishedSubCalls = localData.calls.filter {potentialSubCall ->
+           potentialSubCall.caller == parentCall.callee
+        && potentialSubCall.future in localData.resolvedFutures
+    }
+
+    // FIXME Check if finished sub calls are empty
+
+    val finishedSubCall = randomSource.selectFromList(finishedSubCalls)!! // FIXME throw proper exception
+
+    val readingActor = parentCall.callee
+    val readFuture = finishedSubCall.future
+
+    val loopsApplication = applyLoops(
+        loops = localData.loops,
+        future = parentCall.future,
+        subtree = ProgramTree.Split(
+            listOf(
+                ProgramTree.Get(
+                    future = readFuture
+                ),
+                ProgramTree.Placeholder
+            )
+        )
+    )
+
+    // FIXME handle null exception
+    val inLoopsPosition = localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!! + loopsApplication.positionDelta
+
+    val seedData = localData.copy(
+        methodPositions = localData.methodPositions.plus(
+                Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(1)
+        )
+    )
+
+    val programEncoding = if (localData.encodeProgram) {
+        replace(
+            globalData.methods,
+            Pair(parentCall.callee, parentCall.method),
+            localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!, // TODO throw exception
+            loopsApplication.modifiedProgram
+        )
+    }
+
+    else {
+        globalData.methods
+    }
+
+    val protocolExtension = ProtocolTree.Split(
+        listOf(
+            ProtocolTree.Leaf(GlobalType.Fetching(
+                c = Class("Generated.${readingActor.value}"),
+                f = readFuture
+            )),
+            ProtocolTree.Seed(seedData)
+        )
+    )
+
+    return globalData.copy(
+        methods = programEncoding,
+        protocol = recursionApplicator.replaceSeed(protocolExtension)
+    )
+}
+
+
 // Complete set of rules
 
 data class Rule(
@@ -253,6 +354,10 @@ val rules = setOf(
     Rule(
         guard = ::guardInteract,
         application = ::ruleInteract
+    ),
+    Rule(
+        guard = ::guardRead,
+        application = ::ruleRead
     )
 )
 

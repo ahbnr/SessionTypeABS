@@ -102,7 +102,7 @@ fun buildProgram(callee: Class, method: Method, programTree: ProgramTree, variab
 """await ${programTree.future.value}?;
 ${announceReactivation(callee, method)}"""
 
-        is ProgramTree.Get -> "${programTree.future.value}.get();"
+        is ProgramTree.Get -> "${programTree.future.value}.get;"
         is ProgramTree.Split ->
             programTree
                 .subtrees
