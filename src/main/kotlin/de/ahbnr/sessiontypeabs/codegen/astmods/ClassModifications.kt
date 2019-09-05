@@ -23,11 +23,13 @@ import org.abs_models.frontend.ast.*
  *                      See also [de.ahbnr.sessiontypeabs.codegen.scheduler].
  */
 fun enforceAutomatonOnClass(classDecl: ClassDecl, automaton: SessionAutomaton, schedulerName: String) {
+    // TODO check whether the order of these modifications matters
     introduceStateField(classDecl, automaton)
     introduceRegisters(classDecl, automaton)
     introduceInvocREvStateTransitions(classDecl, automaton)
     introduceSchedulerAnnotation(classDecl, schedulerName, automaton)
     introduceReactivationTransitions(classDecl, automaton)
+    introducePostConditions(classDecl, automaton)  // must be called last
 }
 
 /**********************************************************************************************************
@@ -125,6 +127,27 @@ fun introduceInvocREvStateTransitions(clazz: ClassDecl, automaton: SessionAutoma
     clazz.methodsNoTransform.forEach {
         if (affectedMethods.contains(Method(it.methodSigNoTransform.name))) {
             introduceInvocREvStateTransitions(it, automaton)
+        }
+    }
+}
+
+/**
+ * Adds code for checking post-conditions using assertions to all methods of the given class for which the given automaton
+ * contains transitions with such post-conditions.
+ *
+ * ATTENTION: Since this function needs to insert code at the very beginning of methods,
+ * it should always be the last one in a series of modifications.
+ *
+ * For an example of the introduced code per method, see the documentation of
+ * [de.ahbnr.sessiontypeabs.codegen.astmods.MethodModificationsKt.introducePostConditions].
+ */
+fun introducePostConditions(clazz: ClassDecl, automaton: SessionAutomaton) {
+    val affectedMethods = automaton.affectedMethods()
+
+    //INFO: Use lookupMethod() instead?
+    clazz.methodsNoTransform.forEach {
+        if (affectedMethods.contains(Method(it.methodSigNoTransform.name))) {
+            introducePostConditions(it, automaton)
         }
     }
 }

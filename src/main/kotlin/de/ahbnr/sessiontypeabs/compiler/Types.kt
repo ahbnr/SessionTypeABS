@@ -26,25 +26,29 @@ fun parseTypes(typeSourceFileNames: Iterable<String>): List<GlobalType> =
  * Parses global Session Types, validates them, projects them onto the
  * participating actors and condenses the resulting local Session Types
  */
-fun buildTypes(typeSourceFileNames: Iterable<String>): TypeBuild {
-    val globalTypes = parseTypes(typeSourceFileNames)
+fun buildTypes(typeSourceFileNames: Iterable<String>) =
+    buildTypes(
+        parseTypes(typeSourceFileNames)
+    )
 
+// TODO KDoc
+fun buildTypes(globalTypes: List<GlobalType>): TypeBuild {
     // validate all global session types
     val analysis = globalTypes
-        .map{ gtype -> execute(CombinedDomain(), gtype) }
+        .map { gtype -> execute(CombinedDomain(), gtype) }
 
     // No actor may participate in more than 1 protocol (global session type)
     ensureProtocolsAreDisjunct(analysis)
 
     // Project session types onto actors (classes)
-    val projections = analysis.map{ project(it) }
+    val projections = analysis.map { project(it) }
     // Merge into one map object
     val localTypes = mergeLocalTypes(projections)
 
     // For transformation into SessionAutomata, the Local Session Types must
     // first be "condensed"
     val condensedTypes = localTypes
-        .map{ (c, localType) -> c to condenseType(localType) }
+        .map { (c, localType) -> c to condenseType(localType) }
         .toMap()
 
     return TypeBuild(

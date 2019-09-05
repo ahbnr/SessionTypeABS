@@ -45,13 +45,15 @@ fun condenseType(type: LocalType): CondensedType {
         override fun visit(type: LocalType.Receiving) =
             CondensedType.InvocationRecv(
                 f = type.f,
-                m = type.m
+                m = type.m,
+                postCondition = type.postCondition
             )
 
         override fun visit(type: LocalType.Initialization) =
             CondensedType.InvocationRecv(
                 f = type.f,
-                m = type.m
+                m = type.m,
+                postCondition = type.postCondition
             )
 
         override fun visit(type: LocalType.Suspension) = CondensedType.Skip

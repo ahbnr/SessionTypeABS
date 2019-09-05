@@ -7,6 +7,8 @@ import de.ahbnr.sessiontypeabs.types.LocalType
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.ProjectionException
 
+// TODO Check if post-conditions have to be modified on projection
+
 fun project(type: AnalyzedGlobalType<CombinedDomain>) =
     type
         .postState
@@ -61,7 +63,8 @@ class Projector(
                     type.callee -> LocalType.Receiving(
                         sender = type.caller,
                         f = type.f,
-                        m = type.m
+                        m = type.m,
+                        postCondition = type.postCondition
                     )
                     type.caller -> LocalType.Sending(
                         receiver = type.callee,
@@ -75,7 +78,8 @@ class Projector(
                 when (c) {
                     type.c -> LocalType.Initialization(
                         f = type.f,
-                        m = type.m
+                        m = type.m,
+                        postCondition = type.postCondition
                     )
                     else -> LocalType.Skip
                 }

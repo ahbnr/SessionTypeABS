@@ -15,3 +15,35 @@ fun <T> findSuspends(n: ASTNode<T>): List<SuspendStmt>
 
 fun <T> findSyncCalls(n: ASTNode<T>): List<SyncCall>
         where T : ASTNode<*> = n.findChildren(SyncCall::class.java)
+
+/* Functions to find the end of execution for methods
+   This includes:
+
+   * return
+   * throw
+   * end of block in Unit methods
+
+   TODO check papers for other possible exit points
+ */
+
+fun <T> findReturnStmt(n: ASTNode<T>): ReturnStmt?
+        where T : ASTNode<*> = n.findChildren(ReturnStmt::class.java).firstOrNull()
+
+fun <T> findThrowStmts(n: ASTNode<T>): List<ThrowStmt>
+    where T : ASTNode<*> = n.findChildren(ThrowStmt::class.java)
+
+/**
+ * Returns index of last statement in a block of statements.
+ *
+ * @param b block of statements
+ * @return index of last statement in block or null, if the block is empty
+ */
+fun findIndexOfLastStmt(b: Block): Int? =
+    if (b.numStmtNoTransform > 1) {
+        b.numStmtNoTransform - 1
+    }
+
+    else {
+        null
+    }
+

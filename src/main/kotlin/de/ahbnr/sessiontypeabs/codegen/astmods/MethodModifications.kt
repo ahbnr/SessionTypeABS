@@ -3,6 +3,7 @@ package de.ahbnr.sessiontypeabs.codegen.astmods
 import de.ahbnr.sessiontypeabs.codegen.analysis.ReactivationPoint
 import de.ahbnr.sessiontypeabs.codegen.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
+import de.ahbnr.sessiontypeabs.codegen.analysis.findReturnStmt
 import de.ahbnr.sessiontypeabs.types.Method
 import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 import de.ahbnr.sessiontypeabs.types.analysis.Transition
@@ -12,9 +13,12 @@ import org.abs_models.frontend.ast.*
 
 import kotlin.IllegalArgumentException
 
+// TODO produce more obscure variable names to avoid name clashes
+
 /**
  * This file contains functions modifying the AST of ABS methods.
- * Foremost for the purpose of implementing Session Automata at runtime.
+ * Foremost for the purpose of implementing Session Automata at runtime, but
+ * also to insert assertions for post-condition checking.
  */
 
 /**
@@ -79,8 +83,112 @@ fun introduceReactivationTransitions(methodImpl: MethodImpl, context: ClassDecl,
     }
 }
 
+/**
+ * Adds statements to the given method implementing checks for post-conditions of the behavior defined by
+ * the given Session Automaton.
+ *
+ * For example code, please see the documentation of [introducePostConditionAssertionsForInvocREvs].
+ */
+fun introducePostConditions(methodImpl: MethodImpl, automaton: SessionAutomaton) {
+    // For now, only InvocREvs have post-conditions, so lets extract the relevant transitions and insert the checks
+    val invocTransitions = automaton
+        .transitionsForMethod(Method(methodImpl.methodSigNoTransform.name))
+        .filter{t -> t.verb is TransitionVerb.InvocREv && t.verb.postCondition != null }
+        .toSet()
+
+    introducePostConditionAssertionsForInvocREvs(methodImpl, invocTransitions)
+}
+
+/**
+ * Searches an ABS method for all points where it could possibly conclude its execution.
+ * It then inserts assertions at those points to check for the post-conditions of the given invocREv transitions.
+ *
+ * ATTENTION: Since this method needs to insert code at the very beginning of the method, it should be
+ * called last in a series of modifications.
+ *
+ * TODO: Consider exceptions as exit points.
+ *   Idea: Wrap entire method in try-catch-finally and apply assertion in finally.
+ *
+ * Example:
+ *
+ * Before application of this method:
+ *
+ * ```
+ * Int getAnswer() {
+ *   return 42;
+ * }
+ * ```
+ *
+ * After application of this method:
+ *
+ * ```
+ * Int getAnswer() {
+ *   Int invocState = this.q;
+ *
+ *   {
+ *      Int result = 42;
+ *
+ *      case invocState {
+ *          0 => {
+ *              assert(this.x != null);
+ *          }
+ *
+ *          _ => {skip;}
+ *      }
+ *
+ *      return result;
+ *   }
+ * }
+ * ```
+ *
+ * This function uses a lot of helper functions:
+ *
+ * [genStateCache] is used to store the automaton state upon the initial activation of the method.
+ *                 This is important to decide later one, which post-condition should be checked upon exiting.
+ * [genReturnStmtPostConditionAssertReplacement] is used to generate an AST sub-tree to replace return statements, which will
+ *                 apply the post-condition checks
+ * [genPostConditionAssertionCases] is used to generate case statements which decide, which post-condition shall be checked.
+ * [genAssertionStmtFromTransition] is used to generate "assert" statment AST nodes
+ *
+ * @param methodImpl method for which post-conditions shall be checked
+ * @param invocREvTransitions invocREv transitions for this method with post-conditions
+ * @throws IllegalArgumentException if [invocREvTransitions] contains transitions which are either no invocREv transitions or which don't have a post-condition
+ */
+fun introducePostConditionAssertionsForInvocREvs(methodImpl: MethodImpl, invocREvTransitions: Set<Transition>) {
+    // Store state during invocation in variable, s. t. it can be checked when exiting the method
+    val invocStateVarName = "invocState"
+
+    methodImpl.blockNoTransform.prependStmt(
+        genStateCache(invocStateVarName)
+    )
+
+    // Besides exceptions, methods can only exit at their syntactic end or with a return statement.
+    // Since return statements can only be placed at the end of a method, either we find a return statement
+    // and replace that, or we insert an assertion at the end of the method otherwise.
+    val maybeReturnStmt = findReturnStmt(methodImpl.blockNoTransform)
+
+    when (maybeReturnStmt) {
+        null -> {
+            methodImpl.blockNoTransform.addStmtNoTransform(
+                genPostConditionAssertionCases(invocStateVarName, invocREvTransitions)
+            )
+        }
+        else -> {
+            var variableNameCount = 0
+
+            genReturnStmtPostConditionAssertReplacement(
+                maybeReturnStmt,
+                invocStateVarName,
+                invocREvTransitions,
+                variableNameCount++
+            )
+                .apply(methodImpl.blockNoTransform)
+        }
+    }
+}
+
 /**********************************************************************
- * Code generator function which do not modify existing ASTs themselves
+ * Code generator functions which do not modify existing ASTs themselves
  **********************************************************************/
 
 /**
@@ -347,3 +455,199 @@ private fun replaceAwaitAsyncCallForReactivation(awaitAsyncCall: AwaitAsyncCall,
         )
     )
 }
+
+/**
+ * Generates a case statement, which compares the automaton state a method was initially invoked in
+ * with the starting states of a set of invocation transitions with post-conditions.
+ *
+ * If the state matches, the post-condition is checked with an assertion statement.
+ *
+ * Example result:
+ *
+ * ```
+ * case invocState {
+ *   0 => {
+ *      assert x != null;
+ *   }
+ *   3 => {
+ *      assert x == null;
+ *   }
+ *   _ => {
+ *      skip;
+ *   }
+ * }
+ * ```
+ *
+ * @param invocStateVarName name of the variable which stores the state the method was invoked in
+ * @param invocREvTransitions invocREv transitions with post-conditions
+ * @throws IllegalArgumentException if [invocREvTransitions] contains transitions which are either no invocREv transitions or which don't have a post-condition
+ */
+private fun genPostConditionAssertionCases(invocStateVarName: String, invocREvTransitions: Set<Transition>) =
+    CaseStmt(
+        List(), // no annotations
+        VarUse(invocStateVarName),
+        List(
+            *(
+                invocREvTransitions.map{t ->
+                    CaseBranchStmt(
+                        LiteralPattern(IntLiteral(t.q1.toString())),
+                        Block(
+                            List(), // no annotations
+                            List(
+                                genAssertionStmtFromTransition(t)
+                            )
+                        )
+                    )
+                } + List( // Do nothing, if no post-conditions have been specified for the remaining transitions
+                    CaseBranchStmt(
+                        UnderscorePattern(),
+                        Block(List(), List())
+                    )
+                )
+            ).toTypedArray()
+        )
+    )
+
+
+/**
+ * Generates an ABS assertion statement which is meant to check post-conditions at runtime for
+ * a InvocREv transition of an session automaton.
+ *
+ * Example result:
+ *
+ * ```
+ * assert x != null
+ * ```
+ *
+ * @throws IllegalArgumentException if the [transition.verb] is not of InvocREv type or if [transition.verb.postCondition] is null i. e. there is no post-condition defined.
+ * @param transition transition containing the post-condition to check
+ * @return assertion statement as ABS AST node representing
+ */
+private fun genAssertionStmtFromTransition(transition: Transition) =
+    when (transition.verb) {
+        is TransitionVerb.InvocREv ->
+            AssertStmt(
+                List(), // no annotations
+                transition.verb.postCondition
+                    ?: throw IllegalArgumentException("The transition contains no post-condition (is null).")
+            )
+        else -> throw IllegalArgumentException("Transition parameter is not an InvocREv transition, but assertions for post-conditions can only be generated for InvocREv transitions.")
+    }
+
+/**
+ * Generate ABS code to check a post-conditions of InvocREv transitions by assertions before exiting via
+ * a return statement.
+ *
+ * Example:
+ *
+ * return statement:
+ * ```
+ * return 42;
+ * ```
+ *
+ * Produced replacement:
+ * ```
+ * {
+ *   Int result = 42;
+ *
+ *   case invocState {
+ *     0 => {
+ *      assert this.x != null;
+ *     }
+ *
+ *     _ => { skip; }
+ *   }
+ *
+ *   return result;
+ * }
+ * ```
+ *
+ * @parem returnStmt return statement AST node for which a replacement is generated
+ * @param invocStateVarName name of the variable which stores the automaton state during initial invocation of the method
+ * @param invocREvTransitions list of invocREv transitions with post-conditions
+ * @return block statement which can be used to replace the original return statement.
+ * @throws IllegalArgumentException if [invocREvTransitions] contains transitions which are either no invocREv transitions or which don't have a post-condition
+ */
+private fun genReturnStmtPostConditionAssertReplacement(returnStmt: ReturnStmt, invocStateVarName: String, invocREvTransitions: Set<Transition>, variableNameCount: Int): ReturnStmtReplacement {
+    val varName = "result$variableNameCount"
+    val expTypeName = returnStmt.retExpNoTransform.type.decl.qualifiedName
+    val expDeepCopy = returnStmt.retExpNoTransform.treeCopyNoTransform()
+
+    val varDecl = VarDeclStmt(
+        List(), // no annotations
+        VarDecl(
+            varName,
+            UnresolvedTypeUse(
+                expTypeName,
+                List() // no annotations
+            ),
+            Opt(expDeepCopy)
+        )
+    )
+
+    return ReturnStmtReplacement(
+        originalReturnStmt = returnStmt,
+        leadingStmts = listOf(
+            varDecl,
+            genPostConditionAssertionCases(invocStateVarName, invocREvTransitions)
+        ),
+        returnReplacement = ReturnStmt(
+            returnStmt.annotationListNoTransform.treeCopyNoTransform(), // copy annotations from original return statement
+            VarUse(varName)
+        )
+    )
+}
+
+// FIXME move into global util library
+// https://stackoverflow.com/questions/35808022/kotlin-list-tail-function
+val <T> List<T>.tail: List<T>
+    get() = drop(1)
+
+val <T> List<T>.head: T
+    get() = first()
+
+// TODO KDoc
+data class ReturnStmtReplacement(
+    val originalReturnStmt: ReturnStmt,
+    val leadingStmts: List<Stmt>,
+    val returnReplacement: ReturnStmt
+) {
+    fun apply(methodBlock: Block) {
+        if (leadingStmts.isEmpty()) {
+            originalReturnStmt.replaceWith(returnReplacement)
+        }
+
+        else {
+            originalReturnStmt.replaceWith(leadingStmts.head)
+
+            leadingStmts.tail.forEach(methodBlock::addStmtNoTransform)
+
+            methodBlock.addStmtNoTransform(returnReplacement)
+        }
+    }
+}
+
+/**
+ * Generates a variable declaration storing the current state of the automaton.
+ *
+ * Example:
+ *
+ * ```
+ * Int stateCache = this.q;
+ * ```
+ *
+ * @param varName name of the declared variable
+ * @return variable declaration AST node
+ */
+private fun genStateCache(varName: String) =
+    VarDeclStmt(
+        List(), // no annotations
+        VarDecl(
+            varName,
+            UnresolvedTypeUse(
+                "Int", // FIXME refactor into outside definition
+                List() // no annotations
+            ),
+            Opt(FieldUse(stateFieldIdentifier))
+        )
+    )

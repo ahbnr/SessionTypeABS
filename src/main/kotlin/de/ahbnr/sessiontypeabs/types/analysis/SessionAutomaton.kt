@@ -1,12 +1,14 @@
 package de.ahbnr.sessiontypeabs.types.analysis
 
 import de.ahbnr.sessiontypeabs.types.Method
+import org.abs_models.frontend.ast.PureExp
 
 // data TransitionVerb = InvocREv String register | ReactEv ...
 sealed class TransitionVerb {
     class InvocREv(
         val method: Method,
-        val register: Int
+        val register: Int,
+        val postCondition: PureExp? = null
     ): TransitionVerb()
 
     class ReactEv(

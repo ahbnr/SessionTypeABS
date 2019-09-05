@@ -105,7 +105,11 @@ private fun genAutomaton(t: CondensedType.InvocationRecv, c: Cache): SessionAuto
         setOf(
             Transition(
                 q0,
-                TransitionVerb.InvocREv(t.m, r0),
+                TransitionVerb.InvocREv(
+                    method = t.m,
+                    register = r0,
+                    postCondition = t.postCondition
+                ),
                 q1
             )
         ),
@@ -128,7 +132,10 @@ private fun genAutomaton(t: CondensedType.Reactivation, c: Cache): SessionAutoma
         setOf(
             Transition(
                 q0,
-                TransitionVerb.ReactEv(method, r0),
+                TransitionVerb.ReactEv(
+                    method = method,
+                    register = r0
+                ),
                 q1
             )
         ),

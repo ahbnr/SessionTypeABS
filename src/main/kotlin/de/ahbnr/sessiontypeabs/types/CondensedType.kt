@@ -1,9 +1,12 @@
 package de.ahbnr.sessiontypeabs.types
 
+import org.abs_models.frontend.ast.PureExp
+
 sealed class CondensedType {
     data class InvocationRecv(
         val f: Future,
-        val m: Method
+        val m: Method,
+        val postCondition: PureExp? = null
     ): CondensedType()
 
     data class Reactivation(

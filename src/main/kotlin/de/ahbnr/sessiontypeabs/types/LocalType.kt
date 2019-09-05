@@ -1,9 +1,12 @@
 package de.ahbnr.sessiontypeabs.types
 
+import org.abs_models.frontend.ast.PureExp
+
 sealed class LocalType {
     data class Initialization(
         val f: Future,
-        val m: Method
+        val m: Method,
+        val postCondition: PureExp? = null
     ): LocalType()
 
     data class Sending(
@@ -15,7 +18,8 @@ sealed class LocalType {
     data class Receiving(
         val sender: Class,
         val f: Future,
-        val m: Method
+        val m: Method,
+        val postCondition: PureExp? = null
     ): LocalType()
 
     data class Resolution( // = Put
