@@ -46,13 +46,14 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
             ProtocolTree.Seed(
                 SeedData(
                     resolvedFutures = emptySet(),
+                    suspendedFutures = emptySet(),
+                    suspensionPoint = null,
                     calls = setOf(Call(
                         caller = initCaller,
                         future = initFuture,
                         callee = initCallee,
                         method = initMethod
                     )),
-                    inOptional = false,
                     tracePosition = listOf(1),
                     methodPositions = mapOf(
                         Pair(Class("0"), Method("main")) to listOf(1),
@@ -72,7 +73,6 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
 
     val initialState = GeneratorState(
             usedFutures = emptySet(),
-            suspendedFutures = emptySet(),
             traces = TraceTree.Split(
                 listOf(
                     TraceTree.Leaf(
@@ -86,7 +86,6 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
                     TraceTree.Placeholder
                 )
             ),
-            reactivationPoints = emptyMap(),
             methods = mapOf(
                 Pair(initCaller, Method("main")) to ProgramTree.Split(
                     listOf(

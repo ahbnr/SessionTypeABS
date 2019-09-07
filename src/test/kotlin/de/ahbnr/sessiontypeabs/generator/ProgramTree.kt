@@ -72,9 +72,15 @@ fun buildTraceStore() =
 """String traceStore = "";"""
 
 fun buildTraceStorePrintMethodDecl() = """Unit printTrace();"""
-fun buildTraceStorePrintMethod() = """Unit printTrace() {
+fun buildTraceStorePrintMethod(methods: Iterable<Method>) = """Unit printTrace() {
+${checkCompletionFlags(methods).prependIndent("    ")}
+    
     println(this.traceStore);
 }"""
+
+fun buildCompletionFlags(methods: Iterable<Method>) = methods.map { "Bool ${it.value}Complete = False;" }.intersperse("\n")
+fun setCompletionFlag(method: Method) = "this.${method.value}Complete = True;"
+fun checkCompletionFlags(methods: Iterable<Method>) = "await ${methods.map { it -> "this.${it.value}Complete" }.intersperse(" && ")};"
 
 fun buildFutureIdStore() =
 """Map<Fut<Any>, Int> futStore = map[];
@@ -91,7 +97,7 @@ fun announceInvocation(callee: Class, method: Method) =
 this.traceStore = this.traceStore + "[TRACE] Invocation " + ${retrieveDestinyString()} + " ${callee.value} ${method.value}\n";"""
 
 fun announceReactivation(callee: Class, method: Method) =
-"""this.traceStore = this.traceStore + println("[TRACE] Reactivation " + ${retrieveDestinyString()} + " ${callee.value} ${method.value}\n";"""
+"""this.traceStore = this.traceStore + "[TRACE] Reactivation " + ${retrieveDestinyString()} + " ${callee.value} ${method.value}\n";"""
 
 fun buildProgram(callee: Class, method: Method, programTree: ProgramTree, variableCounter: Int = 0): String =
     when (programTree) {
@@ -126,6 +132,8 @@ fun buildMethod(actor: Class, methodName: Method, programTree: ProgramTree) =
 ${announceInvocation(actor, methodName).prependIndent("    ")}
 
 ${buildProgram(actor, methodName, programTree).prependIndent("    ")}
+
+${setCompletionFlag(methodName).prependIndent("    ")}
 
     return 0;
 }"""
@@ -198,11 +206,13 @@ ${buildInitFields(actors).prependIndent("    ")}
 
 ${buildFutureIdStore().prependIndent("    ")}
 
+${buildCompletionFlags(methods.keys).prependIndent("    ")}
+
 ${buildTraceStore().prependIndent("    ")}
 
 ${buildInitMethod(actors).prependIndent("    ")}
 
-${buildTraceStorePrintMethod().prependIndent("    ")}
+${buildTraceStorePrintMethod(methods.keys).prependIndent("    ")}
 
 ${
     methods.map { (methodName, programTree) ->

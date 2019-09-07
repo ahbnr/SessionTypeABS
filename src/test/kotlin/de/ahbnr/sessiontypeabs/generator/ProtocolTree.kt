@@ -7,9 +7,7 @@ import de.ahbnr.sessiontypeabs.types.Method
 
 data class GeneratorState(
     val usedFutures: Set<Future>,
-    val suspendedFutures: Set<Future>,
     val traces: TraceTree,
-    val reactivationPoints: Map<Future, List<Int>>,
     val methods: Map<Pair<Class, Method>, ProgramTree>,
     val protocol: ProtocolTree
 ) {
@@ -30,10 +28,19 @@ data class LoopDescription(
     val excluded: Set<Future>
 )
 
+data class SuspensionOpportunity(
+    val suspendableActor: Class,
+    val suspendableFuture: Future,
+    val suspendableMethod: Method,
+    val awaitableFuture: Future,
+    val reactivationTracePoint: List<Int>
+)
+
 data class SeedData(
     val resolvedFutures: Set<Future>,
+    val suspendedFutures: Set<Future>,
+    val suspensionPoint: SuspensionOpportunity?,
     val calls: Set<Call>,
-    val inOptional: Boolean,
     val tracePosition: List<Int>,
     val methodPositions: Map<Pair<Class, Method>, List<Int>>,
     val loops: List<LoopDescription>,

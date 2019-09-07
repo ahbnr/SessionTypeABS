@@ -103,7 +103,7 @@ fun callHigherOrderFun(f: String, fparam: ParFnAppParam, vararg params: PureExp)
         )
     )
 
-fun ifThen(condition: PureExp, then: Stmt) =
+fun ifThenElse(condition: PureExp, then: Stmt, maybeElse: Stmt? = null) =
     IfStmt(
         List(), // no annotations
         condition,
@@ -116,5 +116,22 @@ fun ifThen(condition: PureExp, then: Stmt) =
                 List(then)
             )
         },
-        Opt()
+        if (maybeElse == null) {
+            Opt()
+        }
+
+        else {
+            Opt(
+                if (maybeElse is Block) {
+                    maybeElse
+                }
+                else {
+                    Block(
+                        List(), // no annotations
+                        List(maybeElse)
+                    )
+                }
+            )
+        }
     )
+

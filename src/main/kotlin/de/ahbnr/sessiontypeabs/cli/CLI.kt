@@ -6,7 +6,9 @@ import picocli.CommandLine
     name = "SessionTypeABS",
     subcommands = [
         Compile::class,
-        PrintTypes::class,
+        PrintGlobalTypes::class,
+        PrintLocalTypes::class,
+        PrintCondensedLocalTypes::class,
         PrintModel::class
     ]
 )

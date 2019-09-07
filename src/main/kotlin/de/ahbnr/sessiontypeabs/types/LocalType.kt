@@ -7,61 +7,103 @@ sealed class LocalType {
         val f: Future,
         val m: Method,
         val postCondition: PureExp? = null
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "0?${f.value}:${m.value}${
+            if (postCondition != null) {
+                "<$postCondition>"
+            }
+
+            else {
+                ""
+            }
+        }"
+    }
 
     data class Sending(
         val receiver: Class,
         val f: Future,
         val m: Method
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "${receiver.value}!${f.value}:${m.value}"
+    }
 
     data class Receiving(
         val sender: Class,
         val f: Future,
         val m: Method,
         val postCondition: PureExp? = null
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "${sender.value}?${f.value}:${m.value}${
+            if (postCondition != null) {
+                "<$postCondition>"
+            }
+
+            else {
+                ""
+            }
+        }"
+    }
 
     data class Resolution( // = Put
         val f: Future // TODO add ADT constructor name
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "Put ${f.value}"
+    }
 
     data class Fetching( // = Get
         val f: Future // TODO add ADT constructor name
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "Get ${f.value}"
+    }
 
     data class Suspension( // Await, TODO maybe call it Release, too, to redce confusion
         val suspendedFuture: Future,
         val awaitedFuture: Future
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "Await (${suspendedFuture.value}, ${awaitedFuture.value})"
+    }
 
     data class Reactivation(
         val f: Future
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "React(${f.value})"
+    }
 
     // ⊕{Lj}
     data class Choice(
         val choices: List<LocalType>
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "⊕{${choices.map{ it.toString() }.intersperse(", ")}"
+    }
 
     // &f{Lj}
     data class Offer(
         val f: Future,
         val branches: List<LocalType>
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "&${f.value}{${branches.map{ it.toString() }.intersperse(", ")}"
+    }
 
     data class Concatenation(
         val lhs: LocalType,
         val rhs: LocalType
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "$lhs.\n$rhs"
+    }
 
     data class Repetition(
         val repeatedType: LocalType
-    ): LocalType()
+    ): LocalType() {
+        override fun toString() = "($repeatedType)*"
+    }
 
-    object Skip: LocalType()
+    object Skip: LocalType() {
+        override fun toString() = "skip"
+    }
 
-    object Termination: LocalType() // TODO integrate in projection execution etc. Relevant in branching.
+    object Termination: LocalType() {// TODO integrate in projection execution etc. Relevant in branching.
+        override fun toString() = "end"
+    }
 
     fun <ReturnT> accept(visitor: LocalTypeVisitor<ReturnT>): ReturnT =
         when (this) {

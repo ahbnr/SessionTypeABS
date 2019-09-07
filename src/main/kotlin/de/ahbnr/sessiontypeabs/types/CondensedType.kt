@@ -7,26 +7,46 @@ sealed class CondensedType {
         val f: Future,
         val m: Method,
         val postCondition: PureExp? = null
-    ): CondensedType()
+    ): CondensedType() {
+        override fun toString() = "0?${f.value}:${m.value}${
+            if (postCondition != null) {
+                "<$postCondition>"
+            }
+
+            else {
+                ""
+            }
+        }"
+    }
 
     data class Reactivation(
         val f: Future
-    ): CondensedType()
+    ): CondensedType() {
+        override fun toString() = "React(${f.value})"
+    }
 
     data class Concatenation(
         val lhs: CondensedType,
         val rhs: CondensedType
-    ): CondensedType()
+    ): CondensedType() {
+        override fun toString() = "$lhs.\n$rhs"
+    }
 
     data class Repetition(
         val repeatedType: CondensedType
-    ): CondensedType()
+    ): CondensedType() {
+        override fun toString() = "($repeatedType)*"
+    }
 
     data class Branching(
         val choices: List<CondensedType>
-    ): CondensedType()
+    ): CondensedType() {
+        override fun toString() = "{${choices.map{ it.toString() }.intersperse(", ")}"
+    }
 
-    object Skip: CondensedType()
+    object Skip: CondensedType() {
+        override fun toString() = "skip"
+    }
 
     fun <ResultT> accept(visitor: CondensedTypeVisitor<ResultT>): ResultT =
         when (this) {

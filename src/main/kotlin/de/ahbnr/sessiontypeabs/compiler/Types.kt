@@ -53,12 +53,14 @@ fun buildTypes(globalTypes: List<GlobalType>): TypeBuild {
 
     return TypeBuild(
         analyzedProtocols = analysis,
+        localTypes = localTypes,
         condensedTypes = condensedTypes
     )
 }
 
 data class TypeBuild(
     val analyzedProtocols: List<AnalyzedGlobalType<CombinedDomain>>,
+    val localTypes: Map<Class, LocalType>,
     val condensedTypes: Map<Class, CondensedType>
 )
 

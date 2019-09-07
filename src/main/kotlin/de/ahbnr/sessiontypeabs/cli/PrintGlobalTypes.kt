@@ -5,17 +5,17 @@ import de.ahbnr.sessiontypeabs.compiler.parseTypes
 import picocli.CommandLine.*
 
 @Command(
-    name = "printTypes"
+    name = "printGlobalTypes"
 )
-class PrintTypes : Runnable {
+class PrintGlobalTypes : Runnable {
     @Parameters(paramLabel="FILES", arity="1..*")
     private val files: Array<String> = emptyArray()
 
     override fun run() {
         try {
-            val types = parseTypes(files.asIterable())
+            val globalTypes = parseTypes(files.asIterable())
 
-            println(types)
+            println(globalTypes)
         }
 
         catch (exception: Exception) {

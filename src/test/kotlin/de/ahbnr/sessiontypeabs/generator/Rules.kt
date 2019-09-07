@@ -83,7 +83,7 @@ fun insertSeedPointsIntoMethods(methods: Map<Pair<Class, Method>, ProgramTree>, 
             methods - excluded,
             methodPositions,
             ProgramTree.Split(replicate(seeds, ProgramTree.Placeholder))
-        ) + methods.filter { (methodId, methodBody) ->  methodId in excluded },
+        ) + methods.filter { (methodId, _) ->  methodId in excluded },
         (0 .. seeds).map {
             seedNo -> methodPositions.map {
                 (methodId, position) -> methodId to position + seedNo
@@ -107,19 +107,20 @@ fun insertSeedPointsIntoMethods(methods: Map<Pair<Class, Method>, ProgramTree>, 
  *   ∧ f' ∉ Suspended
  */
 fun guardInteract(globalData: GeneratorState, localData: SeedData) =
-    localData
-        .calls
-        .any { call ->
-                   !localData.resolvedFutures.contains(call.future)
-                && !globalData.suspendedFutures.contains(call.future)
-        }
+       localData.suspensionPoint == null
+    && localData
+           .calls
+           .any { call ->
+                      call.future !in localData.resolvedFutures
+                   && call.future !in localData.suspendedFutures
+           }
 
 fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
     val parentCallCandidates = localData
         .calls
-        .filter {
-               !localData.resolvedFutures.contains(it.future)
-            && !globalData.suspendedFutures.contains(it.future)
+        .filter {call ->
+               call.future !in localData.resolvedFutures
+            && call.future !in localData.suspendedFutures
         }
 
     // FIXME Check if callCandidates is empty
@@ -141,8 +142,9 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                     callee = callee,
                     method = method
                 ),
-                ProgramTree.Placeholder,
-                ProgramTree.Placeholder
+                ProgramTree.Placeholder, // Directly after call
+                ProgramTree.Placeholder, // Potential suspension point
+                ProgramTree.Placeholder  // After call has been resolved
             )
         )
     )
@@ -161,7 +163,7 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         globalData.methods,
         localData.methodPositions,
         setOf(Pair(parentCall.callee, parentCall.method)),
-        2
+        3
     )
 
     val seed1Data = localData.copy(
@@ -170,18 +172,37 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         methodPositions = methodPositionsPerSeed[0].plus(
             listOf(
                 Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(1),
-                Pair(callee, method) to emptyList()
+                Pair(callee, method) to listOf(0)
             )
         ),
         loops = excludeFromLoops(loops = loopsApplication.modifiedLoops, future = future)
     ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
 
     val seed2Data = localData.copy(
+        suspensionPoint = SuspensionOpportunity(
+            suspendableActor = parentCall.callee,
+            suspendableFuture = parentCall.future,
+            suspendableMethod = parentCall.method,
+            awaitableFuture = future,
+            reactivationTracePoint = localData.tracePosition + 3
+        ),
+        calls = updatedCalls,
+        tracePosition = localData.tracePosition.plus(2),
+        methodPositions = methodPositionsPerSeed[1].plus(
+            listOf(
+                Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(2),
+                Pair(callee, method) to listOf(1)
+            )
+        ),
+        loops = excludeFromLoops(loops = loopsApplication.modifiedLoops, future = future)
+    ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
+
+    val seed3Data = localData.copy(
         resolvedFutures = localData.resolvedFutures.plus(future),
         calls = updatedCalls,
-        tracePosition = localData.tracePosition.plus(3),
-        methodPositions = methodPositionsPerSeed[1].plus(
-            Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(2)
+        tracePosition = localData.tracePosition.plus(4),
+        methodPositions = methodPositionsPerSeed[2].plus(
+            Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(3)
         ),
         loops = loopsApplication.modifiedLoops
     ) // N2 = N[Resolved ∪ {f}, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.3, MethodPositions[(A, m'):=callerModifiedPosition.2], ModLoops, encodeProgram]
@@ -193,7 +214,12 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                 localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!, // TODO throw exception
                 loopsApplication.modifiedProgram
             )
-            .plus(Pair(callee, method) to ProgramTree.Placeholder)
+            .plus(Pair(callee, method) to ProgramTree.Split(
+                listOf(
+                    ProgramTree.Placeholder, // Start of method
+                    ProgramTree.Placeholder  // potential suspension point of caller
+                )
+            ))
         }
 
         else {
@@ -209,16 +235,17 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                     m = method
                 )),
                 ProtocolTree.Seed(seed1Data),
+                ProtocolTree.Seed(seed2Data),
                 ProtocolTree.Leaf(GlobalType.Resolution(
                     c = Class("Generated.${callee.value}"),
                     f = future
                 )),
-                ProtocolTree.Seed(seed2Data)
+                ProtocolTree.Seed(seed3Data)
             )
         )
 
     return globalData.copy(
-            usedFutures = globalData.usedFutures.plus(future),
+            usedFutures = globalData.usedFutures + future,
             traces = replace(
                 globalData.traces,
                 localData.tracePosition,
@@ -231,12 +258,12 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                             future = future
                         )
                     ),
-                    TraceTree.Placeholder,
-                    TraceTree.Placeholder,
-                    TraceTree.Placeholder
+                    TraceTree.Placeholder, // Directly after call
+                    TraceTree.Placeholder, // Potential suspension point
+                    TraceTree.Placeholder, // Potential reactivation point
+                    TraceTree.Placeholder  // After call has been resolved
                 ))
             ),
-            reactivationPoints = globalData.reactivationPoints.plus(future to localData.tracePosition.plus(2)),
             methods = programEncoding,
             protocol = recursionApplicator.replaceSeed(protocolExtension)
         )
@@ -252,23 +279,24 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
  *     ∧ f' ∉ Suspended
  */
 fun guardRead(globalData: GeneratorState, localData: SeedData) =
-    localData
-        .calls
-        .any { parentCall ->
-               parentCall.future !in localData.resolvedFutures
-            && parentCall.future !in globalData.suspendedFutures
-            && localData.calls.any {potentialSubCall ->
-                      potentialSubCall.caller == parentCall.callee
-                   && potentialSubCall.future in localData.resolvedFutures
-               }
-        }
+       localData.suspensionPoint == null
+    && localData
+           .calls
+           .any { parentCall ->
+                  parentCall.future !in localData.resolvedFutures
+               && parentCall.future !in localData.suspendedFutures
+               && localData.calls.any {potentialSubCall ->
+                         potentialSubCall.caller == parentCall.callee
+                      && potentialSubCall.future in localData.resolvedFutures
+                  }
+           }
 
 fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
     val parentCallCandidates = localData
         .calls
         .filter {parentCall ->
                parentCall.future !in localData.resolvedFutures
-            && parentCall.future !in globalData.suspendedFutures
+            && parentCall.future !in localData.suspendedFutures
             && localData.calls.any {potentialSubCall ->
                    potentialSubCall.caller == parentCall.callee
                 && potentialSubCall.future in localData.resolvedFutures
@@ -310,7 +338,8 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
     val seedData = localData.copy(
         methodPositions = localData.methodPositions.plus(
                 Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(1)
-        )
+        ),
+        loops = loopsApplication.modifiedLoops
     )
 
     val programEncoding = if (localData.encodeProgram) {
@@ -342,6 +371,81 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
     )
 }
 
+// Suspend
+
+/**
+ * ∃(·, f, A, ·) ∈ Calls.
+ *   ∃(A, f', ·, ·) ∈ Calls.
+ *       f, f' ∉ Resolved
+ *     ∧ f ∉ Suspended
+ *     ∧ ¬inOptional
+ */
+fun guardSuspend(globalData: GeneratorState, localData: SeedData) =
+    localData.suspensionPoint != null
+
+fun ruleSuspend(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
+    // FIXME Check if suspension point is null, though this should be impossible
+    val suspensionPoint = localData.suspensionPoint!!
+
+    // Loops can be ignored, impossible that loop is not applied at this point
+
+    val seedData = localData.copy(
+        suspensionPoint = null,
+        suspendedFutures = localData.suspendedFutures + suspensionPoint.suspendableFuture,
+        methodPositions = localData.methodPositions.plus(
+            Pair(suspensionPoint.suspendableActor, suspensionPoint.suspendableMethod)
+                    to
+                localData.methodPositions[Pair(suspensionPoint.suspendableActor, suspensionPoint.suspendableMethod)]!!.plus(1)
+        )
+    )
+
+    val programEncoding = if (localData.encodeProgram) {
+        replace(
+            globalData.methods,
+            Pair(suspensionPoint.suspendableActor, suspensionPoint.suspendableMethod),
+            localData.methodPositions[Pair(suspensionPoint.suspendableActor, suspensionPoint.suspendableMethod)]!!, // TODO throw exception
+            ProgramTree.Split(
+                listOf(
+                    ProgramTree.Await(
+                        future = suspensionPoint.awaitableFuture
+                    ),
+                    ProgramTree.Placeholder
+                )
+            )
+        )
+    }
+
+    else {
+        globalData.methods
+    }
+
+    val protocolExtension = ProtocolTree.Split(
+        listOf(
+            ProtocolTree.Leaf(GlobalType.Release(
+                c = Class("Generated.${suspensionPoint.suspendableActor.value}"),
+                f = suspensionPoint.awaitableFuture
+            )),
+            ProtocolTree.Seed(seedData)
+        )
+    )
+
+    return globalData.copy(
+        traces = replace(
+            globalData.traces,
+            suspensionPoint.reactivationTracePoint,
+            TraceTree.Leaf(
+                actor = suspensionPoint.suspendableActor,
+                fragment = TraceFragment.Reactivation(
+                    actor = suspensionPoint.suspendableActor,
+                    method = suspensionPoint.suspendableMethod,
+                    future = suspensionPoint.suspendableFuture
+                )
+            )
+        ),
+        methods = programEncoding,
+        protocol = recursionApplicator.replaceSeed(protocolExtension)
+    )
+}
 
 // Complete set of rules
 
@@ -354,6 +458,10 @@ val rules = setOf(
     Rule(
         guard = ::guardInteract,
         application = ::ruleInteract
+    ),
+    Rule(
+        guard = ::guardSuspend,
+        application = ::ruleSuspend
     ),
     Rule(
         guard = ::guardRead,

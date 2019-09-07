@@ -18,6 +18,8 @@ import com.pholser.junit.quickcheck.runner.JUnitQuickcheck
 import org.junit.jupiter.api.TestInstance
 import org.junit.runner.RunWith
 
+
+//@RunWith(JUnitQuickcheck::class)
 class Test {
     private fun saveInTempFile(baseFileName: String, fileExtension: String, data: String): File {
         val file = File.createTempFile(baseFileName, ".$fileExtension")
@@ -35,7 +37,7 @@ class Test {
         // TODO better seed generator
         val random = java.util.Random()
 
-        for (i in (1 .. 15)) {
+        for (i in (1 .. 40)) {
             println("\nGeneration iteration $i\n")
             generateAndTrace(random.nextInt())
         }
@@ -48,8 +50,8 @@ class Test {
             RandomSource(
                 RandomSourceConfig(
                     seed = seed,
-                    stepProbability = 0.8,
-                    maxSteps = 10,
+                    stepProbability = 0.9,
+                    maxSteps = 20,
                     methodReuseProbability = 0.5,
                     actorReuseProbability = 0.5
                 )
@@ -57,7 +59,7 @@ class Test {
         )
 
         println(result.protocol)
-        println(result.model)
+        //println(result.model)
 
         val modelFile = saveInTempFile("generated", "abs", result.model)
 
