@@ -5,10 +5,15 @@ import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Method
 
+data class MethodDescription(
+    val invocationTimes: Int,
+    val body: ProgramTree
+)
+
 data class GeneratorState(
     val usedFutures: Set<Future>,
     val traces: TraceTree,
-    val methods: Map<Pair<Class, Method>, ProgramTree>,
+    val methods: Map<Pair<Class, Method>, MethodDescription>,
     val protocol: ProtocolTree
 ) {
 
@@ -44,6 +49,8 @@ data class SeedData(
     val tracePosition: List<Int>,
     val methodPositions: Map<Pair<Class, Method>, List<Int>>,
     val loops: List<LoopDescription>,
+    val inLoop: Boolean,
+    val numOfExecutions: Int,
     val encodeProgram: Boolean
 ) {
     val activeActors: Set<Class>
@@ -81,6 +88,13 @@ sealed class ProtocolTree {
         )
     }
 
+    data class Repetition(
+        val subtree: ProtocolTree
+    ) : ProtocolTree() {
+        override fun recursionPoints(root: ProtocolTree, position: List<Int>) =
+            subtree.recursionPoints(root, position + 0)
+    }
+
     data class Split(
         val subtrees: List<ProtocolTree>
     ) : ProtocolTree() {
@@ -99,8 +113,15 @@ fun replace(protocol: ProtocolTree, locations: List<Int>, replacement: ProtocolT
     when (protocol) {
         is ProtocolTree.Split -> protocol.copy(
             subtrees = protocol.subtrees.replaced(
-                locations.head,
+                locations.head, // FIXME throw exception, if list empty
                 replace(protocol.subtrees[locations.head], locations.tail, replacement)
+            )
+        )
+        is ProtocolTree.Repetition -> protocol.copy(
+            subtree = replace(
+                protocol.subtree,
+                locations.tail, // FIXME throw exception, if list empty
+                replacement
             )
         )
         else -> replacement // TODO throw exception, if locations are not empty or protocol is not a leaf
@@ -109,10 +130,24 @@ fun replace(protocol: ProtocolTree, locations: List<Int>, replacement: ProtocolT
 fun collapse(protocolTree: ProtocolTree): GlobalType? = // TODO Introduce skip type and remove nullability
     when (protocolTree) {
         is ProtocolTree.Leaf -> protocolTree.typeFragement
-        is ProtocolTree.Split ->
-            protocolTree
+        is ProtocolTree.Split -> {
+            val collapsedSubtrees = protocolTree
                 .subtrees
                 .mapNotNull(::collapse)
-                .reduce { acc, globalType -> GlobalType.Concatenation(acc, globalType) }
+
+            if (collapsedSubtrees.isEmpty()) {
+                null
+            }
+
+            else {
+                collapsedSubtrees.reduce { acc, globalType -> GlobalType.Concatenation(acc, globalType) }
+            }
+        }
+        is ProtocolTree.Repetition -> when (val subType = collapse(protocolTree.subtree)) {
+            null -> null
+            else -> GlobalType.Repetition(
+                repeatedType = subType
+            )
+        }
         is ProtocolTree.Seed -> null
     }

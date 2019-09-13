@@ -13,11 +13,15 @@ sealed class TraceFragment {
         override val actor: Class,
         override val method: Method,
         override val future: Future
-    ) : TraceFragment()
+    ) : TraceFragment() {
+        override fun toString() = "InvEv(${actor.value}, ${future.value}, ${method.value})"
+    }
 
     data class Reactivation(
         override val actor: Class,
         override val method: Method,
         override val future: Future
-    ) : TraceFragment()
+    ) : TraceFragment() {
+        override fun toString() = "ReEv(${actor.value}, ${future.value}, ${method.value})"
+    }
 }

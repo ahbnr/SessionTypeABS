@@ -5,6 +5,7 @@ import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Method
+import java.lang.RuntimeException
 
 // Utils
 
@@ -16,68 +17,24 @@ val <T> List<T>.tail: List<T>
 val <T> List<T>.head: T
   get() = first()
 
-data class LoopsApplication(
-    val modifiedLoops: List<LoopDescription>,
-    val modifiedProgram: ProgramTree,
-    val positionDelta: List<Int>
-)
-
-fun applyLoops(loops: List<LoopDescription>, future: Future, subtree: ProgramTree): LoopsApplication =
-    when {
-        loops.isEmpty() -> LoopsApplication( // ([], subtree, ε)
-            modifiedLoops = emptyList(),
-            modifiedProgram = subtree, // TODO: Check whether shallow copy is enough
-            positionDelta = emptyList()
-        )
-
-        else -> {
-            val times = loops.head.times
-            val excluded = loops.head.excluded
-
-            val recursionResult = applyLoops(loops.tail, future, subtree)
-
-            if (future in excluded) {
-                recursionResult.copy(
-                    modifiedLoops = listOf(loops.head) + recursionResult.modifiedLoops
-                )
-            }
-
-            else {
-                LoopsApplication(
-                    modifiedLoops =
-                          listOf(loops.head.copy(excluded = excluded.plus(future)))
-                        + recursionResult.modifiedLoops,
-                    modifiedProgram = ProgramTree.Loop( times, recursionResult.modifiedProgram),
-                    positionDelta = recursionResult.positionDelta.plus(0)
-                )
-            }
-        }
-    }
-
-
-fun excludeFromLoops(loops: List<LoopDescription>, future: Future) =
-    loops.map {
-        it.copy(
-            excluded = it.excluded.plus(future)
-        )
-    }
-
-fun replace(methods: Map<Pair<Class, Method>, ProgramTree>, positions: Map<Pair<Class, Method>, List<Int>>, replacement: ProgramTree) =
+fun replace(methods: Map<Pair<Class, Method>, MethodDescription>, positions: Map<Pair<Class, Method>, List<Int>>, replacement: ProgramTree) =
     methods
         .map {
-            (methodId, methodBody) ->
+            (methodId, methodDescription) ->
                 if (methodId in positions) {
-                    methodId to replace(methodBody, positions[methodId]!!, replacement)
+                    methodId to methodDescription.copy(
+                        body = replace(methodDescription.body, positions[methodId]!!, replacement)
+                    )
                 }
 
                 else {
-                    methodId to methodBody
+                    methodId to methodDescription
                 }
         }
         .toMap()
 
 
-fun insertSeedPointsIntoMethods(methods: Map<Pair<Class, Method>, ProgramTree>, methodPositions: Map<Pair<Class, Method>, List<Int>>, excluded: Set<Pair<Class, Method>>, seeds: Int) =
+fun insertSeedPointsIntoMethods(methods: Map<Pair<Class, Method>, MethodDescription>, methodPositions: Map<Pair<Class, Method>, List<Int>>, excluded: Set<Pair<Class, Method>>, seeds: Int) =
     Pair(
         replace(
             methods - excluded,
@@ -132,26 +89,6 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
     val callee = randomSource.selectActor(localData)
     val method = randomSource.newMethod()
 
-    val loopsApplication = applyLoops(
-        loops = localData.loops,
-        future = parentCall.future,
-        subtree = ProgramTree.Split(
-            listOf(
-                ProgramTree.Call(
-                    future = future,
-                    callee = callee,
-                    method = method
-                ),
-                ProgramTree.Placeholder, // Directly after call
-                ProgramTree.Placeholder, // Potential suspension point
-                ProgramTree.Placeholder  // After call has been resolved
-            )
-        )
-    )
-
-    // FIXME handle null exception
-    val inLoopsPosition = localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!.plus(loopsApplication.positionDelta)
-
     val updatedCalls = localData.calls.plus(Call(
         caller = caller,
         future = future,
@@ -166,16 +103,17 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         3
     )
 
+    val callerMethodPosition = localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!
+
     val seed1Data = localData.copy(
         calls = updatedCalls,
         tracePosition = localData.tracePosition.plus(1),
         methodPositions = methodPositionsPerSeed[0].plus(
             listOf(
-                Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(1),
+                Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 1,
                 Pair(callee, method) to listOf(0)
             )
-        ),
-        loops = excludeFromLoops(loops = loopsApplication.modifiedLoops, future = future)
+        )
     ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
 
     val seed2Data = localData.copy(
@@ -190,11 +128,10 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         tracePosition = localData.tracePosition.plus(2),
         methodPositions = methodPositionsPerSeed[1].plus(
             listOf(
-                Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(2),
+                Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 2,
                 Pair(callee, method) to listOf(1)
             )
-        ),
-        loops = excludeFromLoops(loops = loopsApplication.modifiedLoops, future = future)
+        )
     ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
 
     val seed3Data = localData.copy(
@@ -202,9 +139,8 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         calls = updatedCalls,
         tracePosition = localData.tracePosition.plus(4),
         methodPositions = methodPositionsPerSeed[2].plus(
-            Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(3)
-        ),
-        loops = loopsApplication.modifiedLoops
+            Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 3
+        )
     ) // N2 = N[Resolved ∪ {f}, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.3, MethodPositions[(A, m'):=callerModifiedPosition.2], ModLoops, encodeProgram]
 
     val programEncoding = if (localData.encodeProgram) {
@@ -212,12 +148,26 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                 methodsWithSeeds,
                 Pair(parentCall.callee, parentCall.method),
                 localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!, // TODO throw exception
-                loopsApplication.modifiedProgram
+                ProgramTree.Split(
+                    listOf(
+                        ProgramTree.Call(
+                            future = future,
+                            callee = callee,
+                            method = method
+                        ),
+                        ProgramTree.Placeholder, // Directly after call
+                        ProgramTree.Placeholder, // Potential suspension point
+                        ProgramTree.Placeholder  // After call has been resolved
+                    )
+                )
             )
-            .plus(Pair(callee, method) to ProgramTree.Split(
-                listOf(
-                    ProgramTree.Placeholder, // Start of method
-                    ProgramTree.Placeholder  // potential suspension point of caller
+            .plus(Pair(callee, method) to MethodDescription(
+                invocationTimes = localData.numOfExecutions,
+                body = ProgramTree.Split(
+                    listOf(
+                        ProgramTree.Placeholder, // Start of method
+                        ProgramTree.Placeholder  // potential suspension point of caller
+                    )
                 )
             ))
         }
@@ -244,7 +194,7 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
             )
         )
 
-    return globalData.copy(
+    val result = globalData.copy(
             usedFutures = globalData.usedFutures + future,
             traces = replace(
                 globalData.traces,
@@ -267,6 +217,23 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
             methods = programEncoding,
             protocol = recursionApplicator.replaceSeed(protocolExtension)
         )
+
+    // Force the insertion of a suspension on the created future, if we are currently in a loop.
+    // This and the fact, that no method can be called twice outside of loops seems to make violations of linearity / ordered causality unlikely / impossible.
+    // But ultimately we need to find a reliable solution
+    return if (localData.inLoop) {
+        val suspendRecursionApplicator = result.protocol.recursionPoints().find { it.seedData == seed2Data }
+            ?: throw RuntimeException(
+                "Couldn't find the recursion point for inserting a suspension during QuickCheck data generation." +
+                "This should never happen, because the recursion point in question has just been generated."
+            )
+
+        ruleSuspend(randomSource, result, seed2Data, suspendRecursionApplicator)
+    }
+
+    else {
+        result
+    }
 }
 
 // Read
@@ -304,7 +271,6 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
         }
 
     // FIXME Check if callCandidates is empty
-
     val parentCall = randomSource.selectFromList(parentCallCandidates)!! // FIXME throw proper exception
 
     val finishedSubCalls = localData.calls.filter {potentialSubCall ->
@@ -313,33 +279,18 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
     }
 
     // FIXME Check if finished sub calls are empty
-
     val finishedSubCall = randomSource.selectFromList(finishedSubCalls)!! // FIXME throw proper exception
 
     val readingActor = parentCall.callee
     val readFuture = finishedSubCall.future
 
-    val loopsApplication = applyLoops(
-        loops = localData.loops,
-        future = parentCall.future,
-        subtree = ProgramTree.Split(
-            listOf(
-                ProgramTree.Get(
-                    future = readFuture
-                ),
-                ProgramTree.Placeholder
-            )
-        )
-    )
-
     // FIXME handle null exception
-    val inLoopsPosition = localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!! + loopsApplication.positionDelta
+    val parentCallPosition = localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!
 
     val seedData = localData.copy(
         methodPositions = localData.methodPositions.plus(
-                Pair(parentCall.callee, parentCall.method) to inLoopsPosition.plus(1)
-        ),
-        loops = loopsApplication.modifiedLoops
+                Pair(parentCall.callee, parentCall.method) to parentCallPosition + 1
+        )
     )
 
     val programEncoding = if (localData.encodeProgram) {
@@ -347,7 +298,14 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
             globalData.methods,
             Pair(parentCall.callee, parentCall.method),
             localData.methodPositions[Pair(parentCall.callee, parentCall.method)]!!, // TODO throw exception
-            loopsApplication.modifiedProgram
+            ProgramTree.Split(
+                listOf(
+                    ProgramTree.Get(
+                        future = readFuture
+                    ),
+                    ProgramTree.Placeholder
+                )
+            )
         )
     }
 
@@ -447,6 +405,78 @@ fun ruleSuspend(randomSource: RandomSource, globalData: GeneratorState, localDat
     )
 }
 
+// Loops
+
+fun guardLoop(globalData: GeneratorState, localData: SeedData) =
+    localData.suspensionPoint == null
+
+fun ruleLoop(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
+    val loopDescription = randomSource.newLoopDescription()
+
+    val seed1Data = localData.copy(
+        tracePosition = localData.tracePosition + 0 + 0,
+        methodPositions = localData.methodPositions.map {
+            (methodId, position) -> methodId to position + 0 + 0
+        }.toMap(),
+        numOfExecutions = localData.numOfExecutions * loopDescription.times,
+        inLoop = true
+    )
+
+    val seed2Data = localData.copy(
+        tracePosition = localData.tracePosition + 1,
+        methodPositions = localData.methodPositions.map {
+            (methodId, position) -> methodId to position + 1
+        }.toMap()
+    )
+
+    val protocolExtension = ProtocolTree.Split(
+        listOf(
+            ProtocolTree.Repetition(
+                subtree = ProtocolTree.Seed(seed1Data)
+            ),
+            ProtocolTree.Seed(seed2Data)
+        )
+    )
+
+    val methodSubtree = ProgramTree.Split(
+        listOf(
+            ProgramTree.Loop(
+                loopDescription.times,
+                ProgramTree.Placeholder
+            ),
+            ProgramTree.Placeholder
+        )
+    )
+
+    val programEncoding = if (localData.encodeProgram) {
+        replace(
+            globalData.methods,
+            localData.methodPositions,
+            methodSubtree
+        )
+    }
+
+    else {
+        globalData.methods
+    }
+
+    return globalData.copy(
+        traces = replace(
+            globalData.traces,
+            localData.tracePosition,
+            TraceTree.Split(listOf(
+                TraceTree.Repetition(
+                    times = loopDescription.times,
+                    subtree = TraceTree.Placeholder
+                ),
+                TraceTree.Placeholder
+            ))
+        ),
+        methods = programEncoding,
+        protocol = recursionApplicator.replaceSeed(protocolExtension)
+    )
+}
+
 // Complete set of rules
 
 data class Rule(
@@ -466,6 +496,10 @@ val rules = setOf(
     Rule(
         guard = ::guardRead,
         application = ::ruleRead
+    ),
+    Rule(
+        guard = ::guardLoop,
+        application = ::ruleLoop
     )
 )
 

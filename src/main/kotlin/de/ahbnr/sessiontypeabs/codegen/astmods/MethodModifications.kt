@@ -180,7 +180,7 @@ fun introducePostConditionAssertionsForInvocREvs(methodImpl: MethodImpl, invocRE
                 maybeReturnStmt,
                 invocStateVarName,
                 invocREvTransitions,
-                variableNameCount++
+                variableNameCount++ // FIXME increment never used
             )
                 .apply(methodImpl.blockNoTransform)
         }

@@ -15,7 +15,9 @@ import java.io.PrintWriter
 import kotlin.random.Random
 import com.pholser.junit.quickcheck.Property
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.fail
 import org.junit.runner.RunWith
 
 
@@ -37,6 +39,10 @@ class Test {
         // TODO better seed generator
         val random = java.util.Random()
 
+        //generateAndTrace(1049592827)
+        //generateAndTrace(-1330844228)
+        //generateAndTrace(-94895653) // TODO Check this one, as well as -1687921010
+
         for (i in (1 .. 40)) {
             println("\nGeneration iteration $i\n")
             generateAndTrace(random.nextInt())
@@ -53,13 +59,14 @@ class Test {
                     stepProbability = 0.9,
                     maxSteps = 20,
                     methodReuseProbability = 0.5,
-                    actorReuseProbability = 0.5
+                    actorReuseProbability = 0.5,
+                    maxLoopTimes = 5
                 )
             )
         )
 
         println(result.protocol)
-        //println(result.model)
+        println(result.model)
 
         val modelFile = saveInTempFile("generated", "abs", result.model)
 
@@ -82,12 +89,19 @@ class Test {
         //println(System.getProperty("user.dir"));
 
         val modelOutput = runModel("gen/erl/run")
-        //println(modelOutput)
 
-        val traceRecordings = processOutputToTraces(modelOutput)
+        if (modelOutput == null) {
+            fail("Model execution timed out! There is likely a deadlock or bug.")
+        }
 
-        assertTraces(result.traces, traceRecordings)
+        else {
+            //println(modelOutput)
 
-        //println(result.traces)
+            val traceRecordings = processOutputToTraces(modelOutput)
+
+            assertTraces(result.traces, traceRecordings)
+
+            //println(result.traces)
+        }
     }
 }

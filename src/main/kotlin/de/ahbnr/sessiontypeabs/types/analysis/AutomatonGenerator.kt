@@ -61,11 +61,17 @@ private data class Cache(
  * @param glueStates in the resulting automaton, copies all initial transitions of [a1] will be included for each glue
  *                   state as its starting state
  * @param a1 second automaton
- * @param finalStates states which shall act as final states of the resulting automaton
+ * @param finalStates states which shall act as final states of the resulting automaton.
+ *                    If set to null, the algorithm will decide automatically on the final states:
+ *                      a0.finalStates, if concatenation result has no transitions between the input automata
+ *                                      (happens when concatenating skip automata)
+ *                      a1.finalStates, if a1.q0 is not final
+ *                      (a1.finalStates ∪ glueStates) \ {a1.qo}, otherwise, since the glue states also take a1.q0's
+ *                                                               place as final states
  * @return concatenation of a0 and a1 at the glue states
  * @throws IllegalArgumentException if the glue states are not part of [a1]
  */
-private fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: SessionAutomaton, finalStates: Set<Int>): SessionAutomaton {
+private fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: SessionAutomaton, finalStates: Set<Int>? = null): SessionAutomaton {
     if (!a0.Q.containsAll(glueStates)) {
         throw IllegalArgumentException("To concatenate automata the glue states must all be part of the first automaton")
     }
@@ -81,14 +87,33 @@ private fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: Sessi
     }
     }.flatten()
 
-    return SessionAutomaton(
-        a0.Q.union(a1.Q.minus(a1.q0)), // Q1 ∪ Q2 \ {a1.q0}
-        a0.q0,
+    val resultingDelta =
         a0.Delta // Δ1 ∪ (Δ2 \ {(a1.q0, <...>)}) ∪ {(q, <...>) | q ∈ F1}
             .union(a1.Delta.minus(a1InitialTransitions))
-            .union(replacementTransitions),
-        a0.registers.union(a1.registers),
-        finalStates
+            .union(replacementTransitions)
+
+    // If a1.q0 is final, the glue states which replace a1.q0 must be final too
+    val additionalFinalStates =
+        if (a1.q0 in a1.finalStates) {
+            glueStates
+        }
+
+        else {
+            emptySet()
+        }
+
+    return SessionAutomaton(
+        (a0.Q union a1.Q union additionalFinalStates) - a1.q0, // Q1 ∪ Q2 ∪ Q' \ {a1.q0} where Q' = glueStates, if a1.q0 was final
+        a0.q0,
+        resultingDelta,
+        a0.registers union a1.registers,
+        finalStates ?: if (replacementTransitions.isEmpty()) {
+            a0.finalStates
+        }
+
+        else {
+            (a1.finalStates union additionalFinalStates) - a1.q0
+        }
     )
 }
 
@@ -163,8 +188,7 @@ private fun genAutomaton(t: CondensedType.Concatenation, c: Cache): SessionAutom
     return concatAutomata(
         a0,
         a0.finalStates,
-        a1,
-        a1.finalStates
+        a1
     )
 }
 
@@ -230,7 +254,7 @@ private fun genAutomaton(t: CondensedType.Branching, c: Cache): SessionAutomaton
             headAutomaton,
             setOf(headAutomaton.q0),
             tailAutomaton,
-            headAutomaton.finalStates union
+            headAutomaton.finalStates union // FIXME: Seems like the union is nonsense, both possible operations result in identity.
                 if (t.choices.size == 1) { // Reason for If see above
                     emptySet()
                 } else {

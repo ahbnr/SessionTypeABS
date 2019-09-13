@@ -60,6 +60,8 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
                         Pair(initCallee, initMethod) to emptyList()
                     ),
                     loops = emptyList(),
+                    inLoop = false,
+                    numOfExecutions = 1,
                     encodeProgram = true
                 )
             ),
@@ -87,17 +89,25 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
                 )
             ),
             methods = mapOf(
-                Pair(initCaller, Method("main")) to ProgramTree.Split(
-                    listOf(
-                        ProgramTree.Init(
-                            future = initFuture,
-                            callee = initCallee,
-                            method = initMethod
-                        ),
-                        ProgramTree.Placeholder
+                Pair(initCaller, Method("main")) to
+                    MethodDescription(
+                        invocationTimes = 1,
+                        body = ProgramTree.Split(
+                            listOf(
+                                ProgramTree.Init(
+                                    future = initFuture,
+                                    callee = initCallee,
+                                    method = initMethod
+                                ),
+                                ProgramTree.Placeholder
+                            )
+                        )
+                    ),
+                Pair(initCallee, initMethod) to
+                    MethodDescription(
+                        invocationTimes = 1,
+                        body = ProgramTree.Placeholder
                     )
-                ),
-                Pair(initCallee, initMethod) to ProgramTree.Placeholder
             ),
             protocol = initialProtocol
         )

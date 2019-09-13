@@ -50,9 +50,11 @@ fun replace(programTree: ProgramTree, locations: List<Int>, replacement: Program
         else -> replacement // TODO throw exception, if not placeholder or locations not empty
     }
 
-fun replace(methods: Map<Pair<Class, Method>, ProgramTree>, methodId: Pair<Class, Method>, position: List<Int>, replacement: ProgramTree) =
+fun replace(methods: Map<Pair<Class, Method>, MethodDescription>, methodId: Pair<Class, Method>, position: List<Int>, replacement: ProgramTree) =
     methods.plus(
-        methodId to replace(methods[methodId]!!, position, replacement) // TODO exception if id not present
+        methodId to methods[methodId]!!.copy(
+            body = replace(methods[methodId]!!.body, position, replacement) // TODO exception if id not present
+        )
     )
 
 // TODO move to utility library
@@ -72,15 +74,18 @@ fun buildTraceStore() =
 """String traceStore = "";"""
 
 fun buildTraceStorePrintMethodDecl() = """Unit printTrace();"""
-fun buildTraceStorePrintMethod(methods: Iterable<Method>) = """Unit printTrace() {
-${checkCompletionFlags(methods).prependIndent("    ")}
+fun buildTraceStorePrintMethod(methods: Map<Method, MethodDescription>) = """Unit printTrace() {
+${checkCompletionCounters(methods).prependIndent("    ")}
     
     println(this.traceStore);
 }"""
 
-fun buildCompletionFlags(methods: Iterable<Method>) = methods.map { "Bool ${it.value}Complete = False;" }.intersperse("\n")
-fun setCompletionFlag(method: Method) = "this.${method.value}Complete = True;"
-fun checkCompletionFlags(methods: Iterable<Method>) = "await ${methods.map { it -> "this.${it.value}Complete" }.intersperse(" && ")};"
+// FIXME add method name to MethodDescription and remove then unnecessary passing around of Method values
+fun buildCompletionCounters(methods: Iterable<Method>) = methods.map { "Int ${it.value}Complete = 0;" }.intersperse("\n")
+fun increaseCompletionCounter(method: Method) = "this.${method.value}Complete = this.${method.value}Complete + 1;"
+fun checkCompletionCounters(methods: Map<Method, MethodDescription>) = "await ${methods.map {
+        (methodName, methodDescription) -> "this.${methodName.value}Complete == ${methodDescription.invocationTimes}"
+}.intersperse(" && ")};"
 
 fun buildFutureIdStore() =
 """Map<Fut<Any>, Int> futStore = map[];
@@ -99,7 +104,7 @@ this.traceStore = this.traceStore + "[TRACE] Invocation " + ${retrieveDestinyStr
 fun announceReactivation(callee: Class, method: Method) =
 """this.traceStore = this.traceStore + "[TRACE] Reactivation " + ${retrieveDestinyString()} + " ${callee.value} ${method.value}\n";"""
 
-fun buildProgram(callee: Class, method: Method, programTree: ProgramTree, variableCounter: Int = 0): String =
+fun buildProgram(callee: Class, method: Method, programTree: ProgramTree, uniqueIdPrefix: String = "", uniqueIdCounter: Int = 0): String =
     when (programTree) {
         is ProgramTree.Placeholder -> ""
         is ProgramTree.Call -> "Fut<Int> ${programTree.future.value} = fromJust(this.${buildActorFieldName(programTree.callee)})!${programTree.method.value}();"
@@ -112,28 +117,38 @@ ${announceReactivation(callee, method)}"""
         is ProgramTree.Split ->
             programTree
                 .subtrees
-                .map { buildProgram(callee, method, it)}
+                .mapIndexed { idx, subtree -> buildProgram(callee, method, subtree, "$uniqueIdPrefix$idx")}
                 .filter { it.isNotEmpty() }
                 .intersperse("\n")
         is ProgramTree.Loop -> {
-            val counterName = "i$variableCounter"
+            val loopedStmts = buildProgram(callee, method, programTree.subtree, uniqueIdPrefix, uniqueIdCounter + 1)
 
-"""Int $counterName = 0;
+            if (loopedStmts.isEmpty()) {
+                ""
+            }
+
+            else {
+                val counterName = "i$uniqueIdPrefix$uniqueIdCounter"
+
+                """Int $counterName = 0;
 while ($counterName < ${programTree.times}) {
-${buildProgram(callee, method, programTree.subtree, variableCounter + 1).prependIndent("    ")}
+${loopedStmts.prependIndent("    ")}
+
+    $counterName = $counterName + 1;
 }"""
+            }
         }
     }
 
 fun buildMethodDeclaration(methodName: Method) = "Int ${methodName.value}();"
 
-fun buildMethod(actor: Class, methodName: Method, programTree: ProgramTree) =
+fun buildMethod(actor: Class, methodName: Method, methodDescription: MethodDescription) =
 """Int ${methodName.value}() {
 ${announceInvocation(actor, methodName).prependIndent("    ")}
 
-${buildProgram(actor, methodName, programTree).prependIndent("    ")}
+${buildProgram(actor, methodName, methodDescription.body).prependIndent("    ")}
 
-${setCompletionFlag(methodName).prependIndent("    ")}
+${increaseCompletionCounter(methodName).prependIndent("    ")}
 
     return 0;
 }"""
@@ -172,7 +187,7 @@ fun buildInitFields(actors: Set<Class>) =
         .map { "Maybe<${it.value}I> ${buildActorFieldName(it)} = Nothing;" }
         .intersperse("\n")
 
-fun buildInterface(actors: Set<Class>, actor: Class, methods: Map<Method, ProgramTree>): String =
+fun buildInterface(actors: Set<Class>, actor: Class, methods: Map<Method, MethodDescription>): String =
 """interface ${actor.value}I {
 ${
   methods.map { (methodName, _) ->
@@ -187,7 +202,7 @@ ${buildInitMethodDeclaration(actors).prependIndent("    ")}
 ${buildTraceStorePrintMethodDecl().prependIndent("    ")}
 }"""
 
-fun buildInterfaces(actors: Set<Class>, methods: Map<Pair<Class, Method>, ProgramTree>): String =
+fun buildInterfaces(actors: Set<Class>, methods: Map<Pair<Class, Method>, MethodDescription>): String =
     methods
         .entries
         .groupBy{ it.key.first }
@@ -200,30 +215,30 @@ fun buildInterfaces(actors: Set<Class>, methods: Map<Pair<Class, Method>, Progra
         }
         .intersperse("\n\n")
 
-fun buildClass(actors: Set<Class>, actor: Class, methods: Map<Method, ProgramTree>): String =
+fun buildClass(actors: Set<Class>, actor: Class, methods: Map<Method, MethodDescription>): String =
 """class ${actor.value} implements ${actor.value}I {
 ${buildInitFields(actors).prependIndent("    ")}
 
 ${buildFutureIdStore().prependIndent("    ")}
 
-${buildCompletionFlags(methods.keys).prependIndent("    ")}
+${buildCompletionCounters(methods.keys).prependIndent("    ")}
 
 ${buildTraceStore().prependIndent("    ")}
 
 ${buildInitMethod(actors).prependIndent("    ")}
 
-${buildTraceStorePrintMethod(methods.keys).prependIndent("    ")}
+${buildTraceStorePrintMethod(methods).prependIndent("    ")}
 
 ${
-    methods.map { (methodName, programTree) ->
-        buildMethod(actor, methodName, programTree)
+    methods.map { (methodName, methodDescription) ->
+        buildMethod(actor, methodName, methodDescription)
     }
         .intersperse("\n\n")
         .prependIndent("    ")
 }
 }"""
 
-fun buildClasses(actors: Set<Class>, methods: Map<Pair<Class, Method>, ProgramTree>): String =
+fun buildClasses(actors: Set<Class>, methods: Map<Pair<Class, Method>, MethodDescription>): String =
     methods
         .entries
         .groupBy{ it.key.first }
@@ -236,7 +251,7 @@ fun buildClasses(actors: Set<Class>, methods: Map<Pair<Class, Method>, ProgramTr
         }
         .intersperse("\n\n")
 
-fun buildMainMethod(mainProgram: ProgramTree, actors: Set<Class>) =
+fun buildMainMethod(mainProgram: MethodDescription, actors: Set<Class>) =
 """{
 ${
     actors
@@ -252,7 +267,7 @@ ${
         .prependIndent("    ")
 }
 
-${buildProgram(Class("0"), Method("main"), mainProgram).prependIndent("    ")}
+${buildProgram(Class("0"), Method("main"), mainProgram.body).prependIndent("    ")}
 
     // synchronously output traces, to prevent interleaving of output
 ${
@@ -263,7 +278,8 @@ actors
 }
 }"""
 
-fun buildModel(methods: Map<Pair<Class, Method>, ProgramTree>): String {
+fun buildModel(methods: Map<Pair<Class, Method>, MethodDescription>): String {
+    // FIXME solve first 2 statements with partitioning
     val mainProgram = methods.entries.find { it.key.first == Class("0") }!!.value // TODO throw exception
     val methodsWithoutMain = methods.filter { it.key.first != Class("0") }
     val actorsWithoutMain = methodsWithoutMain.map { it.key.first }.toSet()

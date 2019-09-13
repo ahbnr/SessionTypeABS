@@ -3,6 +3,7 @@ package de.ahbnr.sessiontypeabs.generator
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.Method
+import kotlin.math.abs
 import kotlin.random.Random
 
 data class RandomSourceConfig (
@@ -10,10 +11,11 @@ data class RandomSourceConfig (
     val stepProbability: Double,
     val maxSteps: Int,
     val methodReuseProbability: Double,
-    val actorReuseProbability: Double
+    val actorReuseProbability: Double,
+    val maxLoopTimes: Int
 )
 
-class RandomSource(
+class RandomSource (
     val config: RandomSourceConfig,
     var actorCounter: Int = 0,
     var futureCounter: Int = 0,
@@ -22,6 +24,13 @@ class RandomSource(
     val random: Random = Random(config.seed),
     private val usedActors: MutableList<Class> = mutableListOf()
 ) {
+    fun newLoopDescription(): LoopDescription {
+        return LoopDescription(
+            times = abs(random.nextInt()) % config.maxLoopTimes,
+            excluded = emptySet()
+        )
+    }
+
     fun newActor(): Class {
         return Class("A" + (actorCounter++))
     }
