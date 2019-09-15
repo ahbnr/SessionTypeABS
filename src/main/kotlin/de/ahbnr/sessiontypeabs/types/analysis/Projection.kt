@@ -95,6 +95,8 @@ class Projector(
                         )
                     else -> LocalType.Skip
                 }
+
+            override fun visit(type: GlobalType.Skip) = LocalType.Skip
         }
 
         return type.type.accept(visitor)
@@ -145,5 +147,8 @@ class Projector(
     }
 
     override fun visit(type: AnalyzedGlobalType.RepetitionType<CombinedDomain>) =
-        LocalType.Repetition(type.analyzedRepeatedType.accept(this))
+        when (val projection = type.analyzedRepeatedType.accept(this)) {
+            is LocalType.Skip -> LocalType.Skip
+            else -> LocalType.Repetition(projection)
+        }
 }

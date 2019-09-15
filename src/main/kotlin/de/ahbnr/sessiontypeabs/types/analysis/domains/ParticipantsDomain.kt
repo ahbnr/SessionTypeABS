@@ -50,6 +50,7 @@ data class ParticipantsDomain(
             override fun visit(type: GlobalType.Interaction) = introduceClass(type.caller).introduceClass(type.callee)
             override fun visit(type: GlobalType.Initialization) = introduceClass(type.c)
             override fun visit(type: GlobalType.Release) = introduceClass(type.c)
+            override fun visit(type: GlobalType.Skip) = self.copy()
         }
 
         return label.accept(visitor)

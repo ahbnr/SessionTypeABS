@@ -3,6 +3,7 @@ package de.ahbnr.sessiontypeabs.generator
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.Method
+import java.lang.IllegalArgumentException
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -12,8 +13,15 @@ data class RandomSourceConfig (
     val maxSteps: Int,
     val methodReuseProbability: Double,
     val actorReuseProbability: Double,
-    val maxLoopTimes: Int
-)
+    val maxLoopTimes: Int,
+    val maxBranchSplits: Int
+) {
+    init {
+        if (maxBranchSplits <= 0) {
+            throw IllegalArgumentException("At least one branch must be allowed when branching, thus, maxBranchSplits must be > 0.")
+        }
+    }
+}
 
 class RandomSource (
     val config: RandomSourceConfig,
@@ -29,6 +37,23 @@ class RandomSource (
             times = abs(random.nextInt()) % config.maxLoopTimes,
             excluded = emptySet()
         )
+    }
+
+    fun newBranchingDescription(seedData: SeedData): BranchingDescription? {
+        val numBranches = abs(random.nextInt()) % config.maxBranchSplits + 1
+        val choosingActor = selectActiveActor(seedData)
+
+        return if (choosingActor == null) {
+            null
+        }
+
+        else {
+            BranchingDescription(
+                numBranches = numBranches,
+                branchToEncode = (0 until numBranches).random(random),
+                choosingActor = choosingActor
+            )
+        }
     }
 
     fun newActor(): Class {
@@ -52,16 +77,28 @@ class RandomSource (
             lst.random(random)
         }
 
-    fun selectActor(seedData: SeedData): Class {
-        val inactiveUsedActos = usedActors.minus(seedData.activeActors)
+    fun selectActiveActor(seedData: SeedData): Class? {
+        return with (seedData.activeActors) {
+            if (isEmpty()) {
+                null
+            }
 
-        return if (inactiveUsedActos.isEmpty() || random.nextDouble() > config.actorReuseProbability) {
+            else {
+                random(random)
+            }
+        }
+    }
+
+    fun selectInactiveActor(seedData: SeedData): Class {
+        val inactiveUsedActors = usedActors - seedData.activeActors
+
+        return if (inactiveUsedActors.isEmpty() || random.nextDouble() > config.actorReuseProbability) {
             val actor = newActor()
             usedActors.add(actor) // FIXME use global state actors property instead. => Single source of truth
 
             actor
         } else {
-            inactiveUsedActos.random(random)
+            inactiveUsedActors.random(random)
         }
     }
 

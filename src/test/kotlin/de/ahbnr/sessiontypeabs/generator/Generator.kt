@@ -59,10 +59,10 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
                         Pair(Class("0"), Method("main")) to listOf(1),
                         Pair(initCallee, initMethod) to emptyList()
                     ),
-                    loops = emptyList(),
                     inLoop = false,
+                    inBranching = false,
                     numOfExecutions = 1,
-                    encodeProgram = true
+                    encodeTrace = true
                 )
             ),
             ProtocolTree.Leaf(

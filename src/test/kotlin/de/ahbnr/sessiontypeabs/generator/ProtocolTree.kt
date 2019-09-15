@@ -33,6 +33,12 @@ data class LoopDescription(
     val excluded: Set<Future>
 )
 
+data class BranchingDescription(
+    val numBranches: Int,
+    val branchToEncode: Int,
+    val choosingActor: Class
+)
+
 data class SuspensionOpportunity(
     val suspendableActor: Class,
     val suspendableFuture: Future,
@@ -48,10 +54,10 @@ data class SeedData(
     val calls: Set<Call>,
     val tracePosition: List<Int>,
     val methodPositions: Map<Pair<Class, Method>, List<Int>>,
-    val loops: List<LoopDescription>,
     val inLoop: Boolean,
+    val inBranching: Boolean,
     val numOfExecutions: Int,
-    val encodeProgram: Boolean
+    val encodeTrace: Boolean
 ) {
     val activeActors: Set<Class>
         get() = calls
@@ -95,11 +101,20 @@ sealed class ProtocolTree {
             subtree.recursionPoints(root, position + 0)
     }
 
+    data class Branching(
+        val subtrees: List<ProtocolTree>,
+        val choosingActor: Class
+    ) : ProtocolTree() {
+        override fun recursionPoints(root: ProtocolTree, position: List<Int>) = subtrees.mapIndexed {
+                index, it -> it.recursionPoints(root, position + index)
+        }.flatten().toSet()
+    }
+
     data class Split(
         val subtrees: List<ProtocolTree>
     ) : ProtocolTree() {
         override fun recursionPoints(root: ProtocolTree, position: List<Int>) = subtrees.mapIndexed {
-            index, it -> it.recursionPoints(root, position.plus(index))
+            index, it -> it.recursionPoints(root, position + index)
         }.flatten().toSet()
     }
 
@@ -124,7 +139,18 @@ fun replace(protocol: ProtocolTree, locations: List<Int>, replacement: ProtocolT
                 replacement
             )
         )
-        else -> replacement // TODO throw exception, if locations are not empty or protocol is not a leaf
+        is ProtocolTree.Branching -> protocol.copy(
+            subtrees = protocol.subtrees.replaced(
+                locations.head, // FIXME throw exception, if list empty
+                replace(protocol.subtrees[locations.head], locations.tail, replacement)
+            )
+        )
+        is ProtocolTree.Seed -> replacement // TODO throw exception, if locations are not empty
+        else -> throw RuntimeException(
+            "Trying to replace or traverse an element during replacement in a protocol tree during QuickCheck data generation, " +
+            "but the element is not meant to be replaced or traversed. " +
+            "This probably means an invalid RecursionApplicator had been generated and applied, which should never happen."
+        )
     }
 
 fun collapse(protocolTree: ProtocolTree): GlobalType? = // TODO Introduce skip type and remove nullability
@@ -148,6 +174,24 @@ fun collapse(protocolTree: ProtocolTree): GlobalType? = // TODO Introduce skip t
             else -> GlobalType.Repetition(
                 repeatedType = subType
             )
+        }
+        is ProtocolTree.Branching -> {
+            val collapsedSubtrees = protocolTree
+                .subtrees
+                .map {
+                    collapse(it) ?: GlobalType.Skip
+                }
+
+            if (collapsedSubtrees.isEmpty()) {
+                null
+            }
+
+            else {
+                GlobalType.Branching(
+                    c = protocolTree.choosingActor,
+                    branches = collapsedSubtrees
+                )
+            }
         }
         is ProtocolTree.Seed -> null
     }

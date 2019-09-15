@@ -1,11 +1,10 @@
 package de.ahbnr.sessiontypeabs.generator
 
 import de.ahbnr.sessiontypeabs.tracing.TraceFragment
-import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Method
-import java.lang.RuntimeException
+import kotlin.RuntimeException
 
 // Utils
 
@@ -65,6 +64,7 @@ fun insertSeedPointsIntoMethods(methods: Map<Pair<Class, Method>, MethodDescript
  */
 fun guardInteract(globalData: GeneratorState, localData: SeedData) =
        localData.suspensionPoint == null
+    && !localData.inBranching // we want to work only with active actors in a branching context, see projection rules, but interactions require the callee to be inactive
     && localData
            .calls
            .any { call ->
@@ -86,7 +86,7 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
 
     val caller = parentCall.callee
     val future = randomSource.newFuture()
-    val callee = randomSource.selectActor(localData)
+    val callee = randomSource.selectInactiveActor(localData)
     val method = randomSource.newMethod()
 
     val updatedCalls = localData.calls.plus(Call(
@@ -107,14 +107,14 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
 
     val seed1Data = localData.copy(
         calls = updatedCalls,
-        tracePosition = localData.tracePosition.plus(1),
+        tracePosition = localData.tracePosition + 1,
         methodPositions = methodPositionsPerSeed[0].plus(
             listOf(
                 Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 1,
                 Pair(callee, method) to listOf(0)
             )
         )
-    ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
+    ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeTrace]
 
     val seed2Data = localData.copy(
         suspensionPoint = SuspensionOpportunity(
@@ -125,14 +125,14 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
             reactivationTracePoint = localData.tracePosition + 3
         ),
         calls = updatedCalls,
-        tracePosition = localData.tracePosition.plus(2),
+        tracePosition = localData.tracePosition + 2,
         methodPositions = methodPositionsPerSeed[1].plus(
             listOf(
                 Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 2,
                 Pair(callee, method) to listOf(1)
             )
         )
-    ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeProgram]
+    ) // N1 = N[Resolved, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.1, MethodPositions[(A, m'):=callerModifiedPosition.1] ∪ {(B, m, ε}, excludeFromLoops(ModLoops, f), encodeTrace]
 
     val seed3Data = localData.copy(
         resolvedFutures = localData.resolvedFutures.plus(future),
@@ -141,9 +141,34 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
         methodPositions = methodPositionsPerSeed[2].plus(
             Pair(parentCall.callee, parentCall.method) to callerMethodPosition + 3
         )
-    ) // N2 = N[Resolved ∪ {f}, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.3, MethodPositions[(A, m'):=callerModifiedPosition.2], ModLoops, encodeProgram]
+    ) // N2 = N[Resolved ∪ {f}, Calls ∪ {(A, f, B, m)}, inOptional, tracePosition.3, MethodPositions[(A, m'):=callerModifiedPosition.2], ModLoops, encodeTrace]
 
-    val programEncoding = if (localData.encodeProgram) {
+    val tracesUpdate = if (localData.encodeTrace) {
+        replace(
+            globalData.traces,
+            localData.tracePosition,
+            TraceTree.Split(listOf(
+                TraceTree.Leaf(
+                    actor = callee,
+                    fragment = TraceFragment.Invocation(
+                        actor = callee,
+                        method = method,
+                        future = future
+                    )
+                ),
+                TraceTree.Placeholder, // Directly after call
+                TraceTree.Placeholder, // Potential suspension point
+                TraceTree.Placeholder, // Potential reactivation point
+                TraceTree.Placeholder  // After call has been resolved
+            ))
+        )
+    }
+
+    else {
+        globalData.traces
+    }
+
+    val programEncoding =
             replace(
                 methodsWithSeeds,
                 Pair(parentCall.callee, parentCall.method),
@@ -170,11 +195,6 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                     )
                 )
             ))
-        }
-
-        else {
-            globalData.methods
-        }
 
     val protocolExtension = ProtocolTree.Split(
             listOf(
@@ -196,24 +216,7 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
 
     val result = globalData.copy(
             usedFutures = globalData.usedFutures + future,
-            traces = replace(
-                globalData.traces,
-                localData.tracePosition,
-                TraceTree.Split(listOf(
-                    TraceTree.Leaf(
-                        actor = callee,
-                        fragment = TraceFragment.Invocation(
-                            actor = callee,
-                            method = method,
-                            future = future
-                        )
-                    ),
-                    TraceTree.Placeholder, // Directly after call
-                    TraceTree.Placeholder, // Potential suspension point
-                    TraceTree.Placeholder, // Potential reactivation point
-                    TraceTree.Placeholder  // After call has been resolved
-                ))
-            ),
+            traces = tracesUpdate,
             methods = programEncoding,
             protocol = recursionApplicator.replaceSeed(protocolExtension)
         )
@@ -293,7 +296,7 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
         )
     )
 
-    val programEncoding = if (localData.encodeProgram) {
+    val programEncoding =
         replace(
             globalData.methods,
             Pair(parentCall.callee, parentCall.method),
@@ -307,11 +310,6 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
                 )
             )
         )
-    }
-
-    else {
-        globalData.methods
-    }
 
     val protocolExtension = ProtocolTree.Split(
         listOf(
@@ -357,7 +355,26 @@ fun ruleSuspend(randomSource: RandomSource, globalData: GeneratorState, localDat
         )
     )
 
-    val programEncoding = if (localData.encodeProgram) {
+    val tracesUpdate = if (localData.encodeTrace) {
+        replace(
+            globalData.traces,
+            suspensionPoint.reactivationTracePoint,
+            TraceTree.Leaf(
+                actor = suspensionPoint.suspendableActor,
+                fragment = TraceFragment.Reactivation(
+                    actor = suspensionPoint.suspendableActor,
+                    method = suspensionPoint.suspendableMethod,
+                    future = suspensionPoint.suspendableFuture
+                )
+            )
+        )
+    }
+
+    else {
+        globalData.traces
+    }
+
+    val programEncoding =
         replace(
             globalData.methods,
             Pair(suspensionPoint.suspendableActor, suspensionPoint.suspendableMethod),
@@ -371,11 +388,6 @@ fun ruleSuspend(randomSource: RandomSource, globalData: GeneratorState, localDat
                 )
             )
         )
-    }
-
-    else {
-        globalData.methods
-    }
 
     val protocolExtension = ProtocolTree.Split(
         listOf(
@@ -388,18 +400,7 @@ fun ruleSuspend(randomSource: RandomSource, globalData: GeneratorState, localDat
     )
 
     return globalData.copy(
-        traces = replace(
-            globalData.traces,
-            suspensionPoint.reactivationTracePoint,
-            TraceTree.Leaf(
-                actor = suspensionPoint.suspendableActor,
-                fragment = TraceFragment.Reactivation(
-                    actor = suspensionPoint.suspendableActor,
-                    method = suspensionPoint.suspendableMethod,
-                    future = suspensionPoint.suspendableFuture
-                )
-            )
-        ),
+        traces = tracesUpdate,
         methods = programEncoding,
         protocol = recursionApplicator.replaceSeed(protocolExtension)
     )
@@ -448,20 +449,8 @@ fun ruleLoop(randomSource: RandomSource, globalData: GeneratorState, localData: 
         )
     )
 
-    val programEncoding = if (localData.encodeProgram) {
+    val tracesUpdate = if (localData.encodeTrace) {
         replace(
-            globalData.methods,
-            localData.methodPositions,
-            methodSubtree
-        )
-    }
-
-    else {
-        globalData.methods
-    }
-
-    return globalData.copy(
-        traces = replace(
             globalData.traces,
             localData.tracePosition,
             TraceTree.Split(listOf(
@@ -471,8 +460,392 @@ fun ruleLoop(randomSource: RandomSource, globalData: GeneratorState, localData: 
                 ),
                 TraceTree.Placeholder
             ))
-        ),
+        )
+    }
+
+    else {
+        globalData.traces
+    }
+
+    val programEncoding =
+        replace(
+            globalData.methods,
+            localData.methodPositions,
+            methodSubtree
+        )
+
+    return globalData.copy(
+        traces = tracesUpdate,
         methods = programEncoding,
+        protocol = recursionApplicator.replaceSeed(protocolExtension)
+    )
+}
+
+// Branching
+
+fun guardBranching(globalData: GeneratorState, localData: SeedData) =
+       localData.suspensionPoint == null
+    && localData.activeActors.isNotEmpty()
+    && guardRead(globalData, localData) // In this sort of branching reading is the only allowed action anyway. Thus, we require it to be possible
+
+fun ruleBranching(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
+    val branchingDescription = randomSource.newBranchingDescription(localData)
+        ?: throw RuntimeException(
+            "The branching rule requires for its execution, that there is at least 1 active protocol participant." +
+            "This is ensured by its guard, thus this exception should never happen, "  +
+            "as it is caused by not being able to apply the rule due to there being no active participants.")
+
+    val branchingSeeds =
+        (0 until branchingDescription.numBranches).map {idx ->
+            localData.copy(
+                tracePosition = localData.tracePosition + 0,
+                methodPositions = localData.methodPositions.map {
+                        (methodId, position) -> methodId to position + 0 + idx
+                }.toMap(),
+                encodeTrace = localData.encodeTrace && idx == branchingDescription.branchToEncode,
+                inBranching = true
+            )
+        }
+
+    val seed2Data = localData.copy(
+        tracePosition = localData.tracePosition + 1,
+        methodPositions = localData.methodPositions.map {
+                (methodId, position) -> methodId to position + 1
+        }.toMap()
+    )
+
+    val protocolExtension = ProtocolTree.Split(
+        listOf(
+            ProtocolTree.Branching(
+                choosingActor = branchingDescription.choosingActor,
+                subtrees = branchingSeeds.map(ProtocolTree::Seed)
+            ),
+            ProtocolTree.Seed(seed2Data)
+        )
+    )
+
+    val methodSubtree = ProgramTree.Split(
+        listOf(
+            ProgramTree.Case(
+                treeToEncode = branchingDescription.branchToEncode, // We statically only encode 1 program branch to run
+                subtrees = replicate(branchingDescription.numBranches, ProgramTree.Placeholder)
+            ),
+            ProgramTree.Placeholder
+        )
+    )
+
+    val tracesUpdate = if (localData.encodeTrace) {
+        replace(
+            globalData.traces,
+            localData.tracePosition,
+            TraceTree.Split(listOf(
+                TraceTree.Placeholder,
+                TraceTree.Placeholder
+            ))
+        )
+    }
+
+    else {
+        globalData.traces
+    }
+
+    val programEncoding =
+        replace(
+            globalData.methods,
+            localData.methodPositions,
+            methodSubtree
+        )
+
+    return globalData.copy(
+        traces = tracesUpdate,
+        methods = programEncoding,
+        protocol = recursionApplicator.replaceSeed(protocolExtension)
+    )
+}
+
+fun guardBranchingInteract(globalData: GeneratorState, localData: SeedData) =
+       localData.suspensionPoint == null
+    && !localData.inBranching // we want to work only with active actors in a branching context, see projection rules, but interactions require the callee to be inactive
+    && !localData.inLoop      // due to linearity constraints, see ruleInteract. FIXME: Allow in loops
+    && localData
+        .calls
+        .any { call ->
+               call.future !in localData.resolvedFutures
+            && call.future !in localData.suspendedFutures
+        }
+
+// FIXME: Place seed before branching
+fun ruleBranchingInteract(randomSource: RandomSource, globalData: GeneratorState, localData: SeedData, recursionApplicator: RecursionApplicator): GeneratorState {
+    val parentCallCandidates = localData
+        .calls
+        .filter {call ->
+            call.future !in localData.resolvedFutures
+                && call.future !in localData.suspendedFutures
+        }
+
+    // FIXME Check if callCandidates is empty
+
+    val parentCall = randomSource.selectFromList(parentCallCandidates)!! // FIXME throw proper exception
+
+    val caller = parentCall.callee
+    val future = randomSource.newFuture()
+    val callee = randomSource.selectInactiveActor(localData)
+    val method = randomSource.newMethod()
+
+    val updatedCalls = localData.calls.plus(Call(
+        caller = caller,
+        future = future,
+        callee = callee,
+        method = method
+    ))
+
+    val branchingDescription = randomSource.newBranchingDescription(localData)
+        ?: throw RuntimeException(
+            "A branching rule requires for its execution, that there is at least 1 active protocol participant." +
+            "This is ensured by its guard, thus this exception should never happen, "  +
+            "as it is caused by not being able to apply the rule due to there being no active participants.")
+
+    val callerMethodId = Pair(parentCall.callee, parentCall.method)
+    val calleeMethodId = Pair(callee, method)
+
+    val callerMethodPosition = localData.methodPositions[callerMethodId]!!
+
+    val seed0Data = localData.copy(
+        calls = updatedCalls,
+        tracePosition = localData.tracePosition + 1,
+        methodPositions = localData.methodPositions.map {
+                (methodId, position) -> methodId to
+            if (methodId != callerMethodId) {
+                position + 0
+            }
+
+            else {
+                position
+            }
+        }.toMap()
+            .plus(
+                listOf(
+                    calleeMethodId to listOf(0),
+                    callerMethodId to callerMethodPosition + 1
+                )
+            )
+    )
+
+    val protocolBranches: List<ProtocolTree> =
+        (0 until branchingDescription.numBranches).map {branchId ->
+                val seed1Data = localData.copy(
+                    calls = updatedCalls,
+                    tracePosition = localData.tracePosition + 2 + 0,
+                    methodPositions = localData.methodPositions.map {
+                        (methodId, position) -> methodId to
+                            if (methodId != callerMethodId) {
+                                position + 1 + branchId + 0
+                            }
+
+                            else {
+                                position
+                            }
+                        }.toMap()
+                        .plus(
+                            listOf(
+                                calleeMethodId to listOf(1, branchId, 0),
+                                callerMethodId to callerMethodPosition + 2 + branchId + 0
+                            )
+                        ),
+                    inBranching = true,
+                    encodeTrace = localData.encodeTrace && branchId == branchingDescription.branchToEncode
+                )
+
+                val seed2Data = localData.copy(
+                    suspensionPoint = SuspensionOpportunity(
+                        suspendableActor = parentCall.callee,
+                        suspendableFuture = parentCall.future,
+                        suspendableMethod = parentCall.method,
+                        awaitableFuture = future,
+                        reactivationTracePoint = localData.tracePosition + 2 + 2
+                    ),
+                    calls = updatedCalls,
+                    tracePosition = localData.tracePosition + 2 + 1,
+                    methodPositions = localData.methodPositions.map {
+                        (methodId, position) -> methodId to
+                            if (methodId != callerMethodId) {
+                                position + 1 + branchId + 1
+                            }
+
+                            else {
+                                position
+                            }
+                        }.toMap()
+                        .plus(
+                            listOf(
+                                calleeMethodId to listOf(1, branchId, 1),
+                                callerMethodId to callerMethodPosition + 2 + branchId + 1
+                            )
+                        ),
+                    inBranching = true,
+                    encodeTrace = localData.encodeTrace && branchId == branchingDescription.branchToEncode
+                )
+
+                ProtocolTree.Split(
+                    listOf(
+                        ProtocolTree.Seed(seed1Data),
+                        ProtocolTree.Seed(seed2Data),
+                        ProtocolTree.Leaf(GlobalType.Resolution(
+                            c = Class("Generated.${callee.value}"),
+                            f = future
+                        ))
+                    )
+                )
+        }
+
+    val seed3Data = localData.copy(
+        resolvedFutures = localData.resolvedFutures + future,
+        calls = updatedCalls,
+        tracePosition = localData.tracePosition + 3,
+        methodPositions = localData.methodPositions.map {
+            (methodId, position) -> methodId to
+                if (methodId != callerMethodId) {
+                    position + 2
+                }
+
+                else {
+                    position
+                }
+            }.toMap()
+            .plus(
+                callerMethodId to callerMethodPosition + 3
+            )
+    )
+
+    val protocolExtension = ProtocolTree.Split(
+        listOf(
+            ProtocolTree.Leaf(GlobalType.Interaction(
+                caller = Class("Generated.${caller.value}"),
+                f = future,
+                callee = Class("Generated.${callee.value}"),
+                m = method
+            )),
+            ProtocolTree.Seed(seed0Data),
+            ProtocolTree.Branching(
+                choosingActor = branchingDescription.choosingActor,
+                subtrees = protocolBranches
+            ),
+            ProtocolTree.Seed(seed3Data)
+        )
+    )
+
+    val nonCallerNonCalleeMethodSubtrees = ProgramTree.Split(
+        listOf(
+            ProgramTree.Placeholder,
+            ProgramTree.Case(
+                treeToEncode = branchingDescription.branchToEncode, // We statically only encode 1 program branch to run
+                subtrees = replicate(branchingDescription.numBranches,
+                    ProgramTree.Split(
+                        listOf(
+                            ProgramTree.Placeholder,
+                            ProgramTree.Placeholder
+                        )
+                    )
+                )
+            ),
+            ProgramTree.Placeholder
+        )
+    )
+
+    val callerMethodSubtree =
+        ProgramTree.Split(
+            listOf(
+                ProgramTree.Call(
+                    future = future,
+                    callee = callee,
+                    method = method
+                ),
+                ProgramTree.Placeholder,
+                ProgramTree.Case(
+                    treeToEncode = branchingDescription.branchToEncode, // We statically only encode 1 program branch to run
+                    subtrees = replicate(branchingDescription.numBranches,
+                        ProgramTree.Split(
+                            listOf(
+                                ProgramTree.Placeholder, // Directly after call
+                                ProgramTree.Placeholder  // Potential suspension point
+                            )
+                        )
+                    )
+                ),
+                ProgramTree.Placeholder  // After call has been resolved
+            )
+        )
+
+    val calleeMethodSubtree =
+        ProgramTree.Split(
+            listOf(
+                ProgramTree.Placeholder,
+                ProgramTree.Case(
+                    treeToEncode = branchingDescription.branchToEncode, // We statically only encode 1 program branch to run
+                    subtrees = replicate(branchingDescription.numBranches,
+                        ProgramTree.Split(
+                            listOf(
+                                ProgramTree.Placeholder,
+                                ProgramTree.Placeholder
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+    val nonCallerNonCalleeProgramEncodings =
+        replace(
+            globalData.methods,
+            localData.methodPositions - callerMethodId,
+            nonCallerNonCalleeMethodSubtrees
+        )
+
+    val fullProgramEncodings =
+        replace(
+            nonCallerNonCalleeProgramEncodings,
+            callerMethodId,
+            callerMethodPosition,
+            callerMethodSubtree
+        ).plus(
+            calleeMethodId to MethodDescription(
+                invocationTimes = localData.numOfExecutions,
+                body = calleeMethodSubtree
+            )
+        )
+
+    val tracesUpdate = if (localData.encodeTrace) {
+        replace(
+            globalData.traces,
+            localData.tracePosition,
+            TraceTree.Split(listOf(
+                TraceTree.Leaf(
+                    actor = callee,
+                    fragment = TraceFragment.Invocation(
+                        actor = callee,
+                        method = method,
+                        future = future
+                    )
+                ),
+                TraceTree.Placeholder,
+                TraceTree.Split(listOf(
+                    TraceTree.Placeholder, // First in case structure
+                    TraceTree.Placeholder, // Potential suspension point
+                    TraceTree.Placeholder  // Potential reactivation point
+                )),
+                TraceTree.Placeholder  // After call has been resolved
+            ))
+        )
+    }
+
+    else {
+        globalData.traces
+    }
+
+    return globalData.copy(
+        usedFutures = globalData.usedFutures + future,
+        traces = tracesUpdate,
+        methods = fullProgramEncodings,
         protocol = recursionApplicator.replaceSeed(protocolExtension)
     )
 }
@@ -500,6 +873,14 @@ val rules = setOf(
     Rule(
         guard = ::guardLoop,
         application = ::ruleLoop
+    ),
+    Rule(
+        guard = ::guardBranching,
+        application = ::ruleBranching
+    ),
+    Rule(
+        guard = ::guardBranchingInteract,
+        application = ::ruleBranchingInteract
     )
 )
 

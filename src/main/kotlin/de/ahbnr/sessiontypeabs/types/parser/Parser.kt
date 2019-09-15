@@ -258,6 +258,9 @@ fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>
                 branches = ctx.branch().globalType().map { subCtx -> subCtx.accept(this) },
                 fileContext = buildFileContext(ctx)
             )
+
+        override fun visitSkipping(ctx: GlobalTypesParser.SkippingContext) =
+            GlobalType.Skip
     }
 
     try {

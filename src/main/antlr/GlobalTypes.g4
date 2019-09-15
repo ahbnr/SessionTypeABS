@@ -10,6 +10,7 @@ globalType:
     | branch                            # Branching
     | fetch                             # Fetching
     | resolve                           # Resolution
+    | skip                              # Skipping
     ;
 
 init: '0' '-' future=IDENTIFIER '->' classId=qualified_class_identifier ':' method=IDENTIFIER ('<' postcondition=pure_exp '>')?;
@@ -19,6 +20,7 @@ repeat: '(' repeatedType=globalType ')*';
 branch: classId=qualified_class_identifier '{' (globalType (',' globalType)*)? '}';
 fetch: classId=qualified_class_identifier 'fetches' future=IDENTIFIER;
 resolve: classId=qualified_class_identifier 'resolves' future=IDENTIFIER;
+skip: 'skip';
 
 qualified_class_identifier: (TYPE_IDENTIFIER '.')* TYPE_IDENTIFIER ;
 

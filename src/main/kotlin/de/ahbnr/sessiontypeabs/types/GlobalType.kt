@@ -81,7 +81,7 @@ sealed class GlobalType {
         val branches: List<GlobalType>,
         override val fileContext: FileContext? = null
     ): GlobalType() {
-        override fun toString() = "{${branches.map{ it.toString() }.intersperse(", ")}"
+        override fun toString() = "${c.value}{${branches.map{ it.toString() }.intersperse(", ")}}"
     }
 
     data class Repetition(
@@ -89,6 +89,10 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "($repeatedType)*"
+    }
+
+    object Skip: GlobalType() {
+        override fun toString() = "skip"
     }
 
     fun <ReturnT> accept(visitor: GlobalTypeVisitor<ReturnT>): ReturnT =
@@ -101,6 +105,7 @@ sealed class GlobalType {
             is Release -> visitor.visit(this)
             is Branching -> visitor.visit(this)
             is Repetition -> visitor.visit(this)
+            is Skip -> visitor.visit(this)
         }
 }
 
@@ -113,6 +118,7 @@ interface GlobalTypeVisitor<ReturnT> {
     fun visit(type: GlobalType.Interaction): ReturnT
     fun visit(type: GlobalType.Initialization): ReturnT
     fun visit(type: GlobalType.Release): ReturnT
+    fun visit(type: GlobalType.Skip): ReturnT
 }
 
 // TODO move to utility library

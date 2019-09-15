@@ -44,13 +44,6 @@ fun replace(traceTree: TraceTree, locations: List<Int>, replacement: TraceTree):
             subtree = replace(traceTree.subtree, locations.tail, replacement)
         )
 
-        //is TraceTree.Branching -> traceTree.copy(
-        //    subtrees = traceTree.subtrees.replaced(
-        //        locations.head,
-        //        replace(traceTree.subtrees[locations.head], locations.tail, replacement)
-        //    )
-        //)
-
         is TraceTree.Leaf -> replacement // TODO throw exception, if locations are not empty
         is TraceTree.Placeholder -> replacement
     }

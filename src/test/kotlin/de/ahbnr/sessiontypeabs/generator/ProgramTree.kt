@@ -10,6 +10,11 @@ sealed class ProgramTree {
         val subtree: ProgramTree
     ) : ProgramTree()
 
+    data class Case(
+        val treeToEncode: Int,
+        val subtrees: List<ProgramTree>
+    ) : ProgramTree()
+
     data class Init(
         val future: Future,
         val callee: Class,
@@ -39,7 +44,7 @@ sealed class ProgramTree {
 
 fun replace(programTree: ProgramTree, locations: List<Int>, replacement: ProgramTree): ProgramTree =
     when (programTree) {
-        // FIXME throw exception in first two cases, if locations empty
+        // FIXME throw exception in first three cases, if locations empty
         is ProgramTree.Loop ->
             programTree.copy(subtree = replace(programTree.subtree, locations.tail, replacement))
         is ProgramTree.Split ->
@@ -47,7 +52,17 @@ fun replace(programTree: ProgramTree, locations: List<Int>, replacement: Program
                 locations.head,
                 replace(programTree.subtrees[locations.head], locations.tail, replacement)
             ))
-        else -> replacement // TODO throw exception, if not placeholder or locations not empty
+        is ProgramTree.Case ->
+            programTree.copy(subtrees = programTree.subtrees.replaced(
+                locations.head,
+                replace(programTree.subtrees[locations.head], locations.tail, replacement)
+            ))
+        is ProgramTree.Placeholder -> replacement // TODO throw exception, if locations are not empty
+        else -> throw RuntimeException(
+            "Trying to replace or traverse an element during replacement in a program tree during QuickCheck data generation, " +
+            "but the element is not meant to be replaced or traversed. " +
+            "This probably means an invalid method position had been generated and applied, which should never happen."
+        )
     }
 
 fun replace(methods: Map<Pair<Class, Method>, MethodDescription>, methodId: Pair<Class, Method>, position: List<Int>, replacement: ProgramTree) =
@@ -120,6 +135,36 @@ ${announceReactivation(callee, method)}"""
                 .mapIndexed { idx, subtree -> buildProgram(callee, method, subtree, "$uniqueIdPrefix$idx")}
                 .filter { it.isNotEmpty() }
                 .intersperse("\n")
+
+        is ProgramTree.Case -> {
+            val casePrograms = programTree
+                .subtrees
+                .mapIndexed { idx, subtree ->
+                    buildProgram(callee, method, subtree, "$uniqueIdPrefix$idx")
+                }
+
+            if (casePrograms.all { it.isEmpty() }) {
+                ""
+            }
+
+            else {
+                """case (${programTree.treeToEncode}) {
+${casePrograms
+    .mapIndexed { idx, branchProgram ->
+        "$idx => {${
+        if (branchProgram.isEmpty()) {
+            "}"
+        } else {
+            "\n${branchProgram.prependIndent("    ")}\n}"
+        }
+        }"
+    }
+        .intersperse("\n")
+        .prependIndent("    ")
+}
+}"""
+            }
+        }
         is ProgramTree.Loop -> {
             val loopedStmts = buildProgram(callee, method, programTree.subtree, uniqueIdPrefix, uniqueIdCounter + 1)
 

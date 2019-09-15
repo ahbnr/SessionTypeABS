@@ -41,7 +41,9 @@ class Test {
 
         //generateAndTrace(1049592827)
         //generateAndTrace(-1330844228)
-        //generateAndTrace(-94895653) // TODO Check this one, as well as -1687921010
+        //generateAndTrace(-94895653) // TODO Check this one, as well as -1687921010, -147050390, -1544367615
+
+        generateAndTrace(-61186920)
 
         for (i in (1 .. 40)) {
             println("\nGeneration iteration $i\n")
@@ -57,10 +59,11 @@ class Test {
                 RandomSourceConfig(
                     seed = seed,
                     stepProbability = 0.9,
-                    maxSteps = 20,
+                    maxSteps = 30,
                     methodReuseProbability = 0.5,
                     actorReuseProbability = 0.5,
-                    maxLoopTimes = 5
+                    maxLoopTimes = 5,
+                    maxBranchSplits = 3
                 )
             )
         )
