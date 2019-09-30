@@ -9,5 +9,5 @@ import de.ahbnr.sessiontypeabs.types.GlobalType
  * All abstract domains should therefore implement this interface.
  */
 interface Finalizable<DomainT> {
-   fun finalizeScope(finalizedType: GlobalType): DomainT
+   fun closeScope(finalizedType: GlobalType): DomainT
 }

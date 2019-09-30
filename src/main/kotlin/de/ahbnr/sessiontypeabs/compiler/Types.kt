@@ -6,6 +6,7 @@ import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.analysis.*
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
 import de.ahbnr.sessiontypeabs.types.parser.parseGlobalType
+import org.abs_models.frontend.ast.Model
 import java.io.File
 import java.io.FileInputStream
 
@@ -22,17 +23,32 @@ fun parseTypes(typeSourceFileNames: Iterable<String>): List<GlobalType> =
  * Parses global Session Types, validates them, projects them onto the
  * participating actors and condenses the resulting local Session Types
  */
-fun buildTypes(typeSourceFileNames: Iterable<String>) =
+fun buildTypes(typeSourceFileNames: Iterable<String>, model: Model?) =
     buildTypes(
-        parseTypes(typeSourceFileNames)
+        parseTypes(typeSourceFileNames),
+        model
     )
 
 // TODO KDoc
-fun buildTypes(globalTypes: Collection<GlobalType>): TypeBuildCollection {
+fun buildTypes(globalTypes: Collection<GlobalType>, model: Model?): TypeBuildCollection {
     val typeBuilds = globalTypes
         .map {globalType ->
+            // if not fully qualified names have been used in a type, we first have to resolve them to fully qualified
+            // names using the given model:
+            val resolvedGlobalType =
+                if (model != null) {
+                    resolveActorNames(
+                        model,
+                        globalType
+                    )
+                }
+
+                else {
+                    globalType
+                }
+
             // validate all global session types
-            val analysis = execute(CombinedDomain(), globalType)
+            val analysis = execute(CombinedDomain(), resolvedGlobalType)
 
             // Project session types onto actors (classes)
             val objectProjection = project(analysis)

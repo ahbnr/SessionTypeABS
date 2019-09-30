@@ -5,7 +5,7 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces
  * otherwise validating the protocol becomes a lot more difficult.
  *
  * All abstract analysis domains should therefore implement this interface, see description of
- * [loopContained]
+ * [selfContained]
  */
 interface Repeatable<DomainT> {
     /**
@@ -19,5 +19,5 @@ interface Repeatable<DomainT> {
      * @param errorDescriptions implementors should store explanations for detected errors here, if false is returned
      * @return true iff the loop is self contained
      */
-    fun loopContained(beforeLoop: DomainT, errorDescriptions: MutableList<String>): Boolean
+    fun selfContained(beforeLoop: DomainT, errorDescriptions: MutableList<String>): Boolean
 }

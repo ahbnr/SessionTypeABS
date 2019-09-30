@@ -5,10 +5,7 @@ import de.ahbnr.sessiontypeabs.types.analysis.exceptions.ModelAnalysisException
 import de.ahbnr.sessiontypeabs.types.analysis.model.StmtsEnvironment
 import de.ahbnr.sessiontypeabs.types.analysis.model.StmtsRule
 import de.ahbnr.sessiontypeabs.types.analysis.model.checkStmts
-import org.abs_models.frontend.ast.AwaitStmt
-import org.abs_models.frontend.ast.ClaimGuard
-import org.abs_models.frontend.ast.FieldUse
-import org.abs_models.frontend.ast.Stmt
+import org.abs_models.frontend.ast.*
 
 object AwaitRule: StmtsRule {
     override val name = "Await"
@@ -43,6 +40,29 @@ object AwaitRule: StmtsRule {
 
                 // (c)
                 if (claim is FieldUse) {
+                    // (d)
+                    if (claim.name == typeHead.awaitedFuture.value) {
+                        checkStmts(
+                            env,
+                            stmtsTail,
+                            typeTail
+                        )
+                    }
+
+                    else {
+                        throw ModelAnalysisException(
+                            """|Found an await statement which does not use the same future in its guard as in the
+                               |specification.
+                               |The specification expected the use of future ${typeHead.awaitedFuture.value}, but the
+                               |await statement waits on ${claim.name}.
+                               |""".trimMargin()
+                        )
+                    }
+                }
+
+                // FIXME BUG TODO: This should be "is FieldUse". There is a bug in ABS (https://gitter.im/abstools/general?at=5d92463e9d4cf1736046c301) which currently prevents use of fields, so we use a hack with temporary local variables.
+                // => Remove this else-if, as soon as that bug has been fixed.
+                else if (claim is VarUse) {
                     // (d)
                     if (claim.name == typeHead.awaitedFuture.value) {
                         checkStmts(

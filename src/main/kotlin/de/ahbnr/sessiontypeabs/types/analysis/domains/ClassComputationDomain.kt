@@ -31,7 +31,7 @@ data class ClassComputationDomain(
     /**
      * A loop is considered self-contained here, iff the computation state of no class changed.
      */
-    override fun loopContained(beforeLoop: ClassComputationDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: ClassComputationDomain, errorDescriptions: MutableList<String>): Boolean {
         val maybeError = areMapsWithDefaultValEqual(
             KnownComputationState(emptyList()),
             classFutures,
@@ -143,5 +143,5 @@ data class ClassComputationDomain(
         }
     }
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 }

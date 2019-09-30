@@ -2,6 +2,7 @@ package de.ahbnr.sessiontypeabs.cli
 
 import de.ahbnr.sessiontypeabs.compiler.buildModel
 import de.ahbnr.sessiontypeabs.compiler.buildTypes
+import de.ahbnr.sessiontypeabs.compiler.parseModel
 import org.abs_models.backend.prettyprint.DefaultABSFormatter
 
 import picocli.CommandLine.*
@@ -24,8 +25,9 @@ class PrintModel : Runnable {
                 it.endsWith(".st")
             }
 
-            val typeBuild = buildTypes(typeSourceFiles)
-            val modelBuild = buildModel(absSourceFiles, typeBuild, noChecks = true)
+            val model = parseModel(absSourceFiles)
+            val typeBuild = buildTypes(typeSourceFiles, model)
+            val modelBuild = buildModel(model, typeBuild, noChecks = true)
 
             val printer = PrintWriter(System.out)
             val formatter = DefaultABSFormatter(printer)

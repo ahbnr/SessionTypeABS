@@ -41,7 +41,7 @@ sealed class CondensedType {
     data class Branching(
         val choices: List<CondensedType>
     ): CondensedType() {
-        override fun toString() = "{${choices.map{ it.toString() }.intersperse(", ")}"
+        override fun toString() = "{${choices.map{ it.toString() }.intersperse(", ")}}"
     }
 
     object Skip: CondensedType() {

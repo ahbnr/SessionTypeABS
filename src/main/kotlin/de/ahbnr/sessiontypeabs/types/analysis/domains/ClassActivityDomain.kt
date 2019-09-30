@@ -41,7 +41,7 @@ data class ClassActivityDomain(
     /**
      * A loop is considered self-contained here, iff the activity state of no class changed.
      */
-    override fun loopContained(beforeLoop: ClassActivityDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: ClassActivityDomain, errorDescriptions: MutableList<String>): Boolean {
         val maybeError = areMapsWithDefaultValEqual(
             KnownActivityState(ActivityType.Inactive),
             classStates,
@@ -280,5 +280,5 @@ data class ClassActivityDomain(
         return classState is KnownActivityState && classState.v is ActivityType.Active
     }
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 }

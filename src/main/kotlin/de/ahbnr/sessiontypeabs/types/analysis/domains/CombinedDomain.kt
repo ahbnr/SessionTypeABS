@@ -7,8 +7,6 @@ import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Finalizable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
-import de.ahbnr.sessiontypeabs.types.analysis.exceptions.FinalizationException
-import de.ahbnr.sessiontypeabs.types.intersperse
 
 /**
  * Combines all other domains into one analysis/validation mechanism for global session
@@ -30,13 +28,13 @@ data class CombinedDomain(
      * A loop is considered self-contained, iff it is being considered self-contained by all
      * composite domains.
      */
-    override fun loopContained(beforeLoop: CombinedDomain, errorDescriptions: MutableList<String>) =
-           classActivity.loopContained(beforeLoop.classActivity, errorDescriptions)
-        && classComputation.loopContained(beforeLoop.classComputation, errorDescriptions)
-        && futureFreshness.loopContained(beforeLoop.futureFreshness, errorDescriptions)
-        && protocolInitialization.loopContained(beforeLoop.protocolInitialization, errorDescriptions)
-        && futureResolution.loopContained(beforeLoop.futureResolution, errorDescriptions)
-        && participantsTracker.loopContained(beforeLoop.participantsTracker, errorDescriptions)
+    override fun selfContained(beforeLoop: CombinedDomain, errorDescriptions: MutableList<String>) =
+           classActivity.selfContained(beforeLoop.classActivity, errorDescriptions)
+        && classComputation.selfContained(beforeLoop.classComputation, errorDescriptions)
+        && futureFreshness.selfContained(beforeLoop.futureFreshness, errorDescriptions)
+        && protocolInitialization.selfContained(beforeLoop.protocolInitialization, errorDescriptions)
+        && futureResolution.selfContained(beforeLoop.futureResolution, errorDescriptions)
+        && participantsTracker.selfContained(beforeLoop.participantsTracker, errorDescriptions)
 
     /**
      * The transfer relation is implemented by applying the transfer relation of all
@@ -69,7 +67,7 @@ data class CombinedDomain(
             participantsTracker = participantsTracker merge rhs.participantsTracker
         )
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 
     fun getSuspensionsOnFuture(f: Future) =
         classActivity

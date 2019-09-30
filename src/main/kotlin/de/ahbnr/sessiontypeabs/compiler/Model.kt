@@ -28,20 +28,26 @@ fun getSchedulerLib(): File {
     return file
 }
 
-fun parseModel(absSourceFileNames: Iterable<String>): Model {
+fun parseModel(absSourceFileNames: Iterable<String>, noChecks: Boolean = false): Model {
     //val helperLib = File(ClassLoader.getSystemClassLoader().getResource("schedulerlib.abs").file)
     val helperLib = getSchedulerLib()
     val files = absSourceFileNames.map{arg -> File(arg)} + listOf(helperLib)
 
-    return Main.parseFiles(true, files)
+    val model = Main.parseFiles(true, files)
+
+    if (!noChecks) {
+        checkAndRewriteModel(model)
+        model.doFullTraversal() // make sure we triggered all rewrites
+    }
+
+    return model
 }
 
 /**
  * Parses the ABS source files and applies the given local Session Types on the
  * model, such that it complies to the protocol induced by them at runtime.
  */
-fun buildModel(absSourceFileNames: Iterable<String>, typeBuilds: TypeBuildCollection, noChecks: Boolean = false): ModelBuild {
-    val model = parseModel(absSourceFileNames)
+fun buildModel(model: Model, typeBuilds: TypeBuildCollection, noChecks: Boolean = false): ModelBuild {
     if (!noChecks) {
         checkAndRewriteModel(model)
         model.doFullTraversal() // make sure we triggered all rewrites
@@ -55,6 +61,7 @@ fun buildModel(absSourceFileNames: Iterable<String>, typeBuilds: TypeBuildCollec
     // Modify ABS model
     val modLog = applyTypesToModel(model, typeBuilds.mergedCondensedTypes())
 
+    val modifiedBeforeRewrite = model.treeCopyNoTransform()
     if (!noChecks) {
         // Check whether all participants could be modified (none was missing in the model)
         checkForMissingParticipants(typeBuilds.mergedGlobalTypes(), modLog)
@@ -64,12 +71,14 @@ fun buildModel(absSourceFileNames: Iterable<String>, typeBuilds: TypeBuildCollec
 
     return ModelBuild(
         model = model,
+        modifiedModelBeforeRewrite = modifiedBeforeRewrite, // TODO: This one is only useful for printing the modified model, but a huge investment (requires copying the whole model). Maybe this can be optimized.
         modificationLog = modLog
     )
 }
 
 data class ModelBuild(
     val model: Model,
+    val modifiedModelBeforeRewrite: Model,
     val modificationLog: ModificationLog
 )
 

@@ -186,7 +186,7 @@ private fun <T> executeStep(preState: T, type: GlobalType.Repetition): AnalyzedG
     val iterationResult = applyFinalization(executeStep(preState, type.repeatedType))
 
     val errorDescriptions = mutableListOf<String>()
-    if (iterationResult.postState.loopContained(preState, errorDescriptions)) {
+    if (iterationResult.postState.selfContained(preState, errorDescriptions)) {
         return AnalyzedGlobalType.RepetitionType(
             type = type,
             preState = preState,
@@ -208,15 +208,15 @@ private fun <DomainT> applyFinalization(type: AnalyzedGlobalType<DomainT>)
 =
     when (type) {
         is AnalyzedGlobalType.ConcatenationType<DomainT> -> type.copy(
-            postState = type.postState.finalizeScope(type.type)
+            postState = type.postState.closeScope(type.type)
         )
         is AnalyzedGlobalType.BranchingType<DomainT> -> type.copy(
-            postState = type.postState.finalizeScope(type.type)
+            postState = type.postState.closeScope(type.type)
         )
         is AnalyzedGlobalType.RepetitionType<DomainT> -> type.copy(
-            postState = type.postState.finalizeScope(type.type)
+            postState = type.postState.closeScope(type.type)
         )
         is AnalyzedGlobalType.TerminalType<DomainT> -> type.copy(
-            postState = type.postState.finalizeScope(type.type)
+            postState = type.postState.closeScope(type.type)
         )
     }

@@ -40,7 +40,7 @@ ${makeDescriptionMessage(message)}
         when (actualFragment) {
             is TraceFragment.Invocation -> {
                 assertThat(futureIds)
-                    .describedAs(makeIndexedDescriptionMessage("There is an error in the expected trace fragment. The future ${expectedFragment.future} has already been created."))
+                    .describedAs(makeIndexedDescriptionMessage("There is an error in the expected trace fragment. The future ${expectedFragment.future.value} has already been created."))
                     .doesNotContainKey(expectedFragment.future)
 
                 futureIds.put(expectedFragment.future, actualFragment.future)

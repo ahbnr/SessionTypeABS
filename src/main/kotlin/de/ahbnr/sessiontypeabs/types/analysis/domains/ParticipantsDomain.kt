@@ -26,7 +26,7 @@ data class ParticipantsDomain(
      * A loop is always considered self-contained by this domain.
      * (An exception is only thrown in case of a programmer error)
      */
-    override fun loopContained(beforeLoop: ParticipantsDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: ParticipantsDomain, errorDescriptions: MutableList<String>): Boolean {
         beforeLoop.participants.forEach {
             if (!participants.contains(it)) {
                 throw RuntimeException("Class ${it.value} was participating in the protocol before the loop, but not anymore after the 1st iteration. This should never happen and it is an error in this program.")
@@ -63,5 +63,5 @@ data class ParticipantsDomain(
             participants = participants union rhs.participants
         )
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 }

@@ -200,13 +200,24 @@ fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>
 
     val typeVisitor = object: GlobalTypesBaseVisitor<GlobalType>() {
         override fun visitInitialization(ctx: GlobalTypesParser.InitializationContext) =
-            GlobalType.Initialization(
-                f = Future(ctx.init().future.text),
-                c = Class(ctx.init().classId.text),
-                m = Method(ctx.init().method.text),
-                postCondition = ctx.init().postcondition?.let { parsePostCondition(it, parser, fileName) },
-                fileContext = buildFileContext(ctx)
-            )
+            if (ctx.init().mainBlockSym.text == "0") {
+                GlobalType.Initialization(
+                    f = Future(ctx.init().future.text),
+                    c = Class(ctx.init().classId.text),
+                    m = Method(ctx.init().method.text),
+                    postCondition = ctx.init().postcondition?.let { parsePostCondition(it, parser, fileName) },
+                    fileContext = buildFileContext(ctx)
+                )
+            }
+
+            else {
+                throw ParserException(
+                    fileName = fileName,
+                    line = ctx.init().mainBlockSym.line,
+                    column = ctx.init().mainBlockSym.charPositionInLine,
+                    message = "The first symbol of a session type file must always be \"0\" representing the Main-Block."
+                )
+            }
 
         override fun visitInteraction(ctx: GlobalTypesParser.InteractionContext) =
             GlobalType.Interaction(

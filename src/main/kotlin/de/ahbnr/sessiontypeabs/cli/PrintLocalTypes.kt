@@ -15,7 +15,7 @@ class PrintLocalTypes : Runnable {
 
     override fun run() {
         try {
-            val typeBuild = buildTypes(files.asIterable())
+            val typeBuild = buildTypes(files.asIterable(), null)
 
             println(
                 typeBuild.mergedLocalTypes().map { (actor, localType) ->

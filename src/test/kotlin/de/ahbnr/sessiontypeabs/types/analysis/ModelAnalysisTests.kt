@@ -44,7 +44,7 @@ class ModelAnalysisTests {
                 parseGlobalType(typeInput!!, "$testName.st")
             )
 
-        val typeBuild = buildTypes(listOf(globalType))
+        val typeBuild = buildTypes(listOf(globalType), model)
 
         assertDoesNotThrow(
             "Analysis decided model does not fulfill the given session type, although that should be the case."

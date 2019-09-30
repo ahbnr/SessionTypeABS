@@ -22,7 +22,7 @@ data class InitializationDomain(
      * A loop is always considered self-contained by this domain.
      * (An exception is only thrown in case of a programmer error)
      */
-    override fun loopContained(beforeLoop: InitializationDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: InitializationDomain, errorDescriptions: MutableList<String>): Boolean {
         if (this != beforeLoop) {
             throw RuntimeException("The initialization status before the loop and after the first iteration don't match, but should be equal. This should never happen and it is an error in this program.")
         }
@@ -61,5 +61,5 @@ data class InitializationDomain(
     override fun merge(rhs: InitializationDomain) =
         copy(initialized = initialized && rhs.initialized) // TODO: Correct choice?
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 }

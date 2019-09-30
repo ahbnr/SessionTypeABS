@@ -75,6 +75,9 @@ object GetVarDeclRule: StmtsRule {
                 throw ModelAnalysisException(
                     """|Currently, Session Type ABS only allows to store protocol relevant futures in fields.
                        |Thus, Get-Expressions may only operate on fields.
+                       |
+                       |Offending statement:
+                       |$stmtsHead
                        |""".trimMargin()
                 )
             }

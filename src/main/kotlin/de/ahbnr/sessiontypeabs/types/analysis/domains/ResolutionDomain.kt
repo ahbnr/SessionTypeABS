@@ -28,7 +28,7 @@ data class ResolutionDomain(
      * A repeated global type is considered self-contained, iff the resolution state of no future that was already
      * present before the loop changed during the iteration.
      */
-    override fun loopContained(beforeLoop: ResolutionDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: ResolutionDomain, errorDescriptions: MutableList<String>): Boolean {
         // Search for a future, whose resolution state changed after the loop
         val maybeSelfContainednessViolation = (
             // don't consider new futures introduced in the loop, since them being resolved does
@@ -207,7 +207,7 @@ data class ResolutionDomain(
     override fun merge(rhs: ResolutionDomain) =
         this.copy(resolutionState = resolutionState join resolutionState)
 
-    override fun finalizeScope(finalizedType: GlobalType): ResolutionDomain {
+    override fun closeScope(finalizedType: GlobalType): ResolutionDomain {
         val unresolvedLocalFutures = futuresIntroducedInCurrentScope.filterNot(this::isGuaranteedToBeResolved)
 
         return if (unresolvedLocalFutures.isEmpty()) {

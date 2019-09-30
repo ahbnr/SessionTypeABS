@@ -22,6 +22,7 @@ import org.abs_models.frontend.ast.*
  * * Choice clashes with Block
  * * VarAssignRule and FieldAssignRule are downgraded to a debug rules. isCommInert can do it.
  * * return rule excludes choice
+ * * MethodEnd should be renamed to StmtsEnd, and it should allow type == Skip
  */
 
 val stmtRules = listOf(
@@ -88,13 +89,18 @@ fun checkStmts(env: StmtsEnvironment, stmts: List<Stmt>, type: MethodLocalType?)
     }
 
 fun checkMethodEnd(env: StmtsEnvironment, type: MethodLocalType) =
-    if (type is MethodLocalType.Resolution) {
+    if (type is MethodLocalType.Resolution || type is MethodLocalType.Skip) {
         // OK, nothing left to do, axiom rule
     }
 
     else {
         throw ModelAnalysisException(
-            "The protocol specification describes additional behavior, which can not be found in the model."
+            """
+                The protocol specification describes additional behavior, which can not be found in the model.
+                
+                Additional behavior specified in the protocol, which is not implemented by the model:
+                $type
+            """.trimIndent()
         )
     }
 

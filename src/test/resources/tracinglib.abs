@@ -1,0 +1,60 @@
+module SessionTypeABS.Tracing;
+
+export TraceStore, initialTraceStore, traceInvocation, traceReactivation, printTrace;
+
+// Storing Futures
+data FutStore = FutStore(
+    Map<Fut<Any>, Int> futToId,
+    Int futCounter
+);
+
+def FutStore initialFutStore() = FutStore(map[], 0);
+
+def FutStore registerFuture(FutStore store, Fut<Any> f) =
+    case store {
+        FutStore(futToId, futCounter) => FutStore(
+            insert(futToId, Pair(f, futCounter)),
+            futCounter + 1
+        );
+    };
+
+def String retrieveFutId(FutStore store, Fut<Any> f) =
+    case store {
+        FutStore(futToId, futCounter) =>
+            toString(lookupUnsafe(futToId, f));
+    };
+
+// Storing Traces
+
+data TraceStore = TraceStore(FutStore futStore, String actorId, String trace);
+
+def TraceStore initialTraceStore(String actor) = TraceStore(
+        initialFutStore(),
+        actor,
+        ""
+    );
+
+def TraceStore traceInvocation(TraceStore traceStore, String methodName, Fut<Any> destinyVal) =
+    case traceStore {
+        TraceStore(futStore, actor, trace) =>
+            let
+                FutStore updatedFutStore = registerFuture(futStore, destinyVal)
+            in
+                TraceStore(
+                    updatedFutStore,
+                    actor,
+                    trace + "[TRACE] Invocation " + retrieveFutId(updatedFutStore, destinyVal) + " " + actor + " " + methodName + "\n"
+                );
+    };
+
+def TraceStore traceReactivation(TraceStore traceStore, String methodName, Fut<Any> destinyVal) =
+    case traceStore {
+        TraceStore(futStore, actor, trace) =>
+            TraceStore(
+                futStore,
+                actor,
+                trace + "[TRACE] Reactivation " + retrieveFutId(futStore, destinyVal) + " " + actor + " " + methodName + "\n"
+            );
+    };
+
+def Unit printTrace(TraceStore traceStore) = println(trace(traceStore));

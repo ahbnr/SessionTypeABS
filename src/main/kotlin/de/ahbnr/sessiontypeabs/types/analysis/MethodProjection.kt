@@ -350,7 +350,7 @@ class MethodProjector(
                             type = type.type,
                             message =
                                 """|Error during method projection.
-                                   |Future ${targetFuture.value} of actor $targetActor behaves differently in different branches,
+                                   |Future ${targetFuture.value} of actor ${targetActor.value} behaves differently in different branches,
                                    |although it is not the future choosing the branching (which is ${type.getCastedType().f.value})
                                    |or reading from its result or being called by it.
                                    |

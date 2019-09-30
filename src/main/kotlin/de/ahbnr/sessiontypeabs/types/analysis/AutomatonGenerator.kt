@@ -254,11 +254,23 @@ private fun genAutomaton(t: CondensedType.Branching, c: Cache): SessionAutomaton
             headAutomaton,
             setOf(headAutomaton.q0),
             tailAutomaton,
-            headAutomaton.finalStates union // FIXME: Seems like the union is nonsense, both possible operations result in identity.
+            headAutomaton.finalStates union
                 if (t.choices.size == 1) { // Reason for If see above
                     emptySet()
-                } else {
-                    headAutomaton.finalStates
+                }
+
+                else { // TODO extensive testing
+                    // If the final states of the tailAutomaton contain its initial state, we have to replace it with the initial state of the headAutomaton,
+                    // since that one replaces the initial state of the tailAutomaton.
+                    tailAutomaton.finalStates - tailAutomaton.q0 + (
+                            if (tailAutomaton.q0 in tailAutomaton.finalStates) {
+                                setOf(headAutomaton.q0)
+                            }
+
+                            else {
+                                emptySet()
+                            }
+                        )
                 }
         )
     }

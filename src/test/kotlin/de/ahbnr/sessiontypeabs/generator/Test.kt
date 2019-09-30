@@ -15,6 +15,7 @@ import java.io.PrintWriter
 import kotlin.random.Random
 import com.pholser.junit.quickcheck.Property
 import com.pholser.junit.quickcheck.runner.JUnitQuickcheck
+import de.ahbnr.sessiontypeabs.compiler.parseModel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
@@ -73,8 +74,9 @@ class Test {
 
         val modelFile = saveInTempFile("generated", "abs", result.model)
 
-        val typeBuild = buildTypes(listOf(result.protocol))
-        val modelBuild = buildModel(listOf(modelFile.absolutePath), typeBuild)
+        val model = parseModel(listOf(modelFile.absolutePath))
+        val typeBuild = buildTypes(listOf(result.protocol), model)
+        val modelBuild = buildModel(model, typeBuild)
 
         //val printer = PrintWriter(System.out)
         //val formatter = DefaultABSFormatter(printer)

@@ -30,7 +30,7 @@ data class FutureFreshnessDomain(
      * A loop is always considered self-contained by this domain.
      * (An exception is only thrown in case of a programmer error)
      */
-    override fun loopContained(beforeLoop: FutureFreshnessDomain, errorDescriptions: MutableList<String>): Boolean {
+    override fun selfContained(beforeLoop: FutureFreshnessDomain, errorDescriptions: MutableList<String>): Boolean {
         beforeLoop.usedFutures.forEach {
             if (!usedFutures.contains(it)) {
                 throw RuntimeException("Future ${it.value} was used before the loop, but not anymore after the 1st iteration. This should never happen and is a programming error.")
@@ -122,5 +122,5 @@ data class FutureFreshnessDomain(
      */
     private fun isFresh(f: Future) = !usedFutures.contains(f)
 
-    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+    override fun closeScope(finalizedType: GlobalType) = this.copy()
 }

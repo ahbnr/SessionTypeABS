@@ -24,7 +24,7 @@ class ActorModelMapping {
                 .getParticipants()
                 .associateWith { actorIdentifier ->
                     classes.find { classDecl -> classDecl.qualifiedName == actorIdentifier.value }
-                        ?: throw ModelAnalysisException("There is no class in the model representing actor $actorIdentifier.")
+                        ?: throw ModelAnalysisException("There is no class in the model representing actor ${actorIdentifier.value}.")
                 }
 
         val actorsToInterfaceTypes =

@@ -1,0 +1,127 @@
+module Printer;
+
+import * from SessionTypeABS.Tracing;
+
+data StatusMsg = Ok | OutOfPaper;
+
+interface PrinterI {
+    StatusMsg preparePage();
+    Unit print(String page);
+    Unit finishPage();
+
+    Unit printTrace();
+}
+
+interface ClientI {
+    Unit main();
+}
+
+class Client (PrinterI printer) implements ClientI {
+    Fut<StatusMsg> pageRequest;
+    Fut<Unit> printJob;
+    Fut<Unit> finalization;
+
+    Fut<Unit> printPrinterTrace;
+
+    TraceStore traceStore = initialTraceStore("Client");
+
+    Unit main() {
+        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+
+        println("Client: Started!");
+
+        List<String> pages = list["Page 0", "Page 1", "Page 2"];
+
+        Int i = 0;
+        Bool abort = False;
+
+        while (i < length(pages) && !abort) {
+            println("Client: Trying to print page no. " + toString(i));
+
+            pageRequest = printer!preparePage();
+            Fut<StatusMsg> pageRequest = this.pageRequest; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
+            await pageRequest?;
+            traceStore = traceReactivation(traceStore, "main", thisDestiny);
+
+            println("Client: Printer returned a status code.");
+            StatusMsg status = this.pageRequest.get;
+
+            case status {
+                Ok => {
+                    printJob = printer!print(nth(pages, i));
+                    finalization = printer!finishPage();
+                    Fut<Unit> finalization = this.finalization; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
+                    await finalization?;
+                    traceStore = traceReactivation(traceStore, "main", thisDestiny);
+
+                    println("Client: Printer confirms that page no. " + toString(i) + " has been printed.");
+                }
+
+                OutOfPaper => {
+                    println("Client: Printer has no more paper, could not print page no. " + toString(i));
+                    abort = True;
+                }
+            }
+
+            i = i + 1;
+        }
+
+        println("Client: Finished!");
+
+        printTrace(traceStore);
+        printPrinterTrace = printer!printTrace();
+
+        Fut<Unit> printPrinterTrace = this.printPrinterTrace; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
+        await printPrinterTrace?;
+    }
+}
+
+class Printer implements PrinterI {
+    Int pages = 2;
+    TraceStore traceStore = initialTraceStore("Printer");
+
+    StatusMsg preparePage() {
+        traceStore = traceInvocation(traceStore, "preparePage", thisDestiny);
+
+        println("Printer: Got request to prepare a page to print.");
+
+        StatusMsg result = OutOfPaper;
+
+        if (pages > 0) {
+            pages = pages - 1;
+            result = Ok;
+        }
+
+        else {
+            result = OutOfPaper;
+        }
+
+        println("Printer: Returning status message.");
+
+        return result;
+    }
+
+    Unit print(String page) {
+        traceStore = traceInvocation(traceStore, "print", thisDestiny);
+
+        println("Printer: Got request to print a page.");
+        println(page);
+    }
+
+    Unit finishPage() {
+        traceStore = traceInvocation(traceStore, "finishPage", thisDestiny);
+
+        println("Printer: Got ordered to finalize printing a page");
+    }
+
+    Unit printTrace() {
+        printTrace(traceStore);
+    }
+}
+
+{
+    PrinterI printer = new Printer();
+    ClientI client = new Client(printer);
+
+    await client!main();
+}

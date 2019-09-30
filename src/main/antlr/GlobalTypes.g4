@@ -13,7 +13,7 @@ globalType:
     | skip                              # Skipping
     ;
 
-init: '0' '-' future=IDENTIFIER '->' classId=qualified_class_identifier ':' method=IDENTIFIER ('<' postcondition=pure_exp '>')?;
+init: mainBlockSym=INTLITERAL '-' future=IDENTIFIER '->' classId=qualified_class_identifier ':' method=IDENTIFIER ('<' postcondition=pure_exp '>')?;
 interact: caller=qualified_class_identifier '-' future=IDENTIFIER '->' callee=qualified_class_identifier ':' method=IDENTIFIER ('<' postcondition=pure_exp '>')?;
 releaseR: 'Rel('classId=qualified_class_identifier ',' future=IDENTIFIER ')';
 repeat: '(' repeatedType=globalType ')*';
