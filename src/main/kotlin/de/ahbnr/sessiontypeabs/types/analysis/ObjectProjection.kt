@@ -16,14 +16,16 @@ fun project(type: AnalyzedGlobalType<CombinedDomain>) =
         .map{ participant -> participant to project(type, participant) }
         .toMap()
 
-fun project(type: AnalyzedGlobalType<CombinedDomain>, c: Class) =
-    type.accept(Projector(c))
+fun project(type: AnalyzedGlobalType<CombinedDomain>, c: Class): AnalyzedLocalType =
+    type.accept(ObjectProjector(c))
 
-class Projector(
+
+class ObjectProjector(
     val c: Class
-): AnalyzedGlobalTypeVisitor<CombinedDomain, LocalType> {
-    override fun visit(type: AnalyzedGlobalType.TerminalType<CombinedDomain>): LocalType {
+): AnalyzedGlobalTypeVisitor<CombinedDomain, AnalyzedLocalType> {
+    override fun visit(type: AnalyzedGlobalType.TerminalType<CombinedDomain>): AnalyzedLocalType {
         val outerType = type
+
         val visitor = object: GlobalTypeVisitor<LocalType> {
             override fun visit(type: GlobalType.Repetition) =
                 throw RuntimeException("This function should never be called, since other functions take care of this case.")
@@ -37,7 +39,8 @@ class Projector(
             override fun visit(type: GlobalType.Fetching) =
                 when (c) {
                     type.c -> LocalType.Fetching(
-                        f = type.f
+                        f = type.f,
+                        constructor = type.constructor
                     )
                     else -> LocalType.Skip
                 }
@@ -46,7 +49,8 @@ class Projector(
                 when (c) {
                     // is the class we project on resolving the future?
                     type.c -> LocalType.Resolution(
-                        f = type.f
+                        f = type.f,
+                        constructor = type.constructor
                     )
                     else -> outerType // Otherwise check, if c is awaiting type.f
                         .preState
@@ -99,56 +103,97 @@ class Projector(
             override fun visit(type: GlobalType.Skip) = LocalType.Skip
         }
 
-        return type.type.accept(visitor)
+
+        return AnalyzedLocalType.TerminalType(
+            type = type.type.accept(visitor),
+            preState = type.preState,
+            postState = type.postState
+        )
     }
 
-    override fun visit(type: AnalyzedGlobalType.ConcatenationType<CombinedDomain>): LocalType {
+    override fun visit(type: AnalyzedGlobalType.ConcatenationType<CombinedDomain>): AnalyzedLocalType {
         val leftProjection = type.leftAnalyzedType.accept(this)
         val rightProjection = type.rightAnalzedType.accept(this)
 
         return when {
-            leftProjection == LocalType.Skip -> rightProjection
-            rightProjection == LocalType.Skip -> leftProjection
-            else -> LocalType.Concatenation(leftProjection, rightProjection)
+            leftProjection.type == LocalType.Skip -> rightProjection
+            rightProjection.type == LocalType.Skip -> leftProjection
+            else -> AnalyzedLocalType.ConcatenationType(
+                type = LocalType.Concatenation(leftProjection.type, rightProjection.type),
+                preState = type.preState,
+                postState = type.postState,
+                leftAnalyzedType = leftProjection,
+                rightAnalzedType = rightProjection
+            )
         }
     }
 
-    override fun visit(type: AnalyzedGlobalType.BranchingType<CombinedDomain>): LocalType {
+    override fun visit(type: AnalyzedGlobalType.BranchingType<CombinedDomain>): AnalyzedLocalType {
         val branches = type
             .analyzedBranches
             .map{ branch -> branch.accept(this) }
 
-        if (branches.isEmpty()) {
-            return LocalType.Skip
-        }
+        val preState = type.preState
+        val postState = type.postState
 
-        else if (type.getCastedType().c == c) { // TODO: Check for activity of c, otherwise it isnt able to make a choice?
-            return LocalType.Choice(
-                choices = branches
+        // Either...
+        when {
+            // ...there are no branches, so we can simply skip this part
+            branches.isEmpty() -> return AnalyzedLocalType.TerminalType(
+                type = LocalType.Skip,
+                preState = preState,
+                postState = postState
             )
-        }
 
-        else {
-            val maybeActiveFuture = type.preState.getActiveFuture(c)
-
-            when {
-                maybeActiveFuture != null -> return LocalType.Offer(
-                    branches = branches,
-                    f = maybeActiveFuture
+            // ...OR the object we are projecting on makes the choice, in which case we generate a choice type
+            type.getCastedType().choosingActor == c -> // TODO: Check for activity of choosingActor, otherwise it isnt able to make a choice? Does the abstract execution do this?
+                return AnalyzedLocalType.ChoiceType(
+                    type = LocalType.Choice(
+                        choices = branches.map { it.type }
+                    ),
+                    preState = preState,
+                    postState = postState,
+                    analyzedChoices = branches
                 )
-                branches.all { it == branches.first() } // TODO: Relax equality constraint
-                    -> return branches.first()
-                else -> throw ProjectionException(
-                    type.type,
-                    "Global branching type cannot be projected on class ${c.value}, since neither is ${c.value} actively choosing a branch, nor has it an active future at all, nor do all branches resolve to the same local type for the class, such that there is no choice."
-                ) // TODO: Use more fitting exception class
+
+            // ...OR we are offered branches by another actor (though we are possibly not participating)
+            else -> {
+                val maybeChooserFuture = type.preState.getActiveFuture(type.getCastedType().choosingActor)
+
+                if (maybeChooserFuture != null) {
+                    return AnalyzedLocalType.OfferType(
+                        type = LocalType.Offer(
+                            branches = branches.map { it.type },
+                            f = maybeChooserFuture
+                        ),
+                        preState = preState,
+                        postState = postState,
+                        analyzedBranches = branches
+                    )
+                }
+
+                else {
+                    throw ProjectionException(
+                        type.type,
+                        "The actor making the branching choice has no active future."
+                    )
+                }
             }
         }
     }
 
-    override fun visit(type: AnalyzedGlobalType.RepetitionType<CombinedDomain>) =
-        when (val projection = type.analyzedRepeatedType.accept(this)) {
-            is LocalType.Skip -> LocalType.Skip
-            else -> LocalType.Repetition(projection)
+    override fun visit(type: AnalyzedGlobalType.RepetitionType<CombinedDomain>): AnalyzedLocalType {
+        val projection = type.analyzedRepeatedType.accept(this)
+
+        return when {
+            projection.type == LocalType.Skip -> projection
+            else ->
+                AnalyzedLocalType.RepetitionType(
+                    type = LocalType.Repetition(projection.type),
+                    preState = type.preState,
+                    postState = type.postState,
+                    analyzedRepeatedType = projection
+                )
         }
+    }
 }

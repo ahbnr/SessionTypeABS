@@ -66,7 +66,7 @@ class ParserTests {
                     m = Method("m")
                 ),
                 GlobalType.Branching(
-                    c = Class("O"),
+                    choosingActor = Class("O"),
                     branches = listOf(
                         GlobalType.Concatenation(
                             GlobalType.Interaction(

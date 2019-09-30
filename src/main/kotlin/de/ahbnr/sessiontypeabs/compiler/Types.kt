@@ -3,12 +3,8 @@ package de.ahbnr.sessiontypeabs.compiler
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.LocalType
-import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedGlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.condenseType
+import de.ahbnr.sessiontypeabs.types.analysis.*
 import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
-import de.ahbnr.sessiontypeabs.types.analysis.execute
-import de.ahbnr.sessiontypeabs.types.analysis.project
 import de.ahbnr.sessiontypeabs.types.parser.parseGlobalType
 import java.io.File
 import java.io.FileInputStream
@@ -32,37 +28,34 @@ fun buildTypes(typeSourceFileNames: Iterable<String>) =
     )
 
 // TODO KDoc
-fun buildTypes(globalTypes: List<GlobalType>): TypeBuild {
-    // validate all global session types
-    val analysis = globalTypes
-        .map { gtype -> execute(CombinedDomain(), gtype) }
+fun buildTypes(globalTypes: Collection<GlobalType>): TypeBuildCollection {
+    val typeBuilds = globalTypes
+        .map {globalType ->
+            // validate all global session types
+            val analysis = execute(CombinedDomain(), globalType)
+
+            // Project session types onto actors (classes)
+            val objectProjection = project(analysis)
+
+            // For transformation into SessionAutomata, the Local Session Types must
+            // first be "condensed"
+            val condensedTypes = objectProjection
+                .mapValues { (c, localType) -> condenseType(localType.type) }
+
+            TypeBuild(
+                analyzedProtocol = analysis,
+                localTypes = objectProjection,
+                condensedTypes = condensedTypes
+            )
+        }
 
     // No actor may participate in more than 1 protocol (global session type)
-    ensureProtocolsAreDisjunct(analysis)
+    ensureProtocolsAreDisjunct(typeBuilds.map(TypeBuild::analyzedProtocol))
 
-    // Project session types onto actors (classes)
-    val projections = analysis.map { project(it) }
-    // Merge into one map object
-    val localTypes = mergeLocalTypes(projections)
-
-    // For transformation into SessionAutomata, the Local Session Types must
-    // first be "condensed"
-    val condensedTypes = localTypes
-        .map { (c, localType) -> c to condenseType(localType) }
-        .toMap()
-
-    return TypeBuild(
-        analyzedProtocols = analysis,
-        localTypes = localTypes,
-        condensedTypes = condensedTypes
+    return TypeBuildCollection(
+        typeBuilds = typeBuilds
     )
 }
-
-data class TypeBuild(
-    val analyzedProtocols: List<AnalyzedGlobalType<CombinedDomain>>,
-    val localTypes: Map<Class, LocalType>,
-    val condensedTypes: Map<Class, CondensedType>
-)
 
 /**
  * If there are multiple Global Session Types, multiple
@@ -71,7 +64,7 @@ data class TypeBuild(
  *
  * //FIXME: Throw exception, if a class key is present in multiple maps
  */
-fun mergeLocalTypes(localTypesList: List<Map<Class, LocalType>>) =
-    localTypesList.fold(emptyMap<Class, LocalType>()) {
-            acc, nextElement -> acc.plus(nextElement)
+fun mergeLocalTypes(localTypesList: List<Map<Class, AnalyzedLocalType>>) =
+    localTypesList.fold(emptyMap<Class, AnalyzedLocalType>()) {
+            acc, nextElement -> acc + nextElement
     }

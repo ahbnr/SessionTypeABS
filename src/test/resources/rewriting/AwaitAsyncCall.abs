@@ -1,0 +1,31 @@
+module Test;
+
+interface Foo {
+    Int foo();
+}
+
+interface Main {
+    Unit main();
+}
+
+class A implements Foo {
+    Int foo() {
+        return 42;
+    }
+}
+
+class B implements Main {
+    Unit main() {
+        Foo a = new A();
+
+        Int result = await a!foo();
+
+        println(toString(result));
+    }
+}
+
+{
+    Main b = new B();
+
+    b.main();
+}

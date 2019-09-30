@@ -2,12 +2,12 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.*
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.join
 import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.JoinSemiFlatLattice
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.FinalizationException
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
+import de.ahbnr.sessiontypeabs.types.intersperse
 
 private typealias ResolutionState = JoinSemiFlatLattice<Boolean>
 private typealias UnknownResolutionState = JoinSemiFlatLattice.Any<Boolean>
@@ -17,10 +17,12 @@ private typealias KnownResolutionState = JoinSemiFlatLattice.Value<Boolean>
  * Keeps track, whether a future has been resolved yet or not.
  */
 data class ResolutionDomain(
-    private val resolutionState: Map<Future, ResolutionState> = emptyMap()
+    private val resolutionState: Map<Future, ResolutionState> = emptyMap(),
+    private val futuresIntroducedInCurrentScope: Set<Future> = emptySet()
 ): Mergeable<ResolutionDomain>,
     Transferable<GlobalType, ResolutionDomain>,
-    Repeatable<ResolutionDomain>
+    Repeatable<ResolutionDomain>,
+    Finalizable<ResolutionDomain>
 {
     /**
      * A repeated global type is considered self-contained, iff the resolution state of no future that was already
@@ -77,7 +79,9 @@ data class ResolutionDomain(
         {
             is KnownResolutionState ->
                 when (resState.v) {
-                    false -> return this.copy()
+                    false -> return this.copy(
+                        futuresIntroducedInCurrentScope = futuresIntroducedInCurrentScope + label.f
+                    )
                     true -> throw TransferException(
                         label,
                         "Can not initialize future ${label.f.value}, since it has already been resolved."
@@ -96,11 +100,14 @@ data class ResolutionDomain(
      */
     private fun transfer(label: GlobalType.Interaction): ResolutionDomain {
         val resState = getResolutionState(label.f)
-        when(resState)
+
+        return when(resState)
         {
             is KnownResolutionState ->
                 when (resState.v) {
-                    false -> return this.copy()
+                    false -> this.copy(
+                        futuresIntroducedInCurrentScope = futuresIntroducedInCurrentScope + label.f
+                    )
                     true -> throw TransferException(
                         label,
                         "Can not create future ${label.f.value} for interaction, since it has already been resolved."
@@ -199,4 +206,33 @@ data class ResolutionDomain(
 
     override fun merge(rhs: ResolutionDomain) =
         this.copy(resolutionState = resolutionState join resolutionState)
+
+    override fun finalizeScope(finalizedType: GlobalType): ResolutionDomain {
+        val unresolvedLocalFutures = futuresIntroducedInCurrentScope.filterNot(this::isGuaranteedToBeResolved)
+
+        return if (unresolvedLocalFutures.isEmpty()) {
+            this.copy(
+                futuresIntroducedInCurrentScope = emptySet()
+            )
+        }
+
+        else {
+            throw FinalizationException(
+                type = finalizedType,
+                message = """
+                    |Global session type does not specify a resolving action for every future in the current scope.
+                    |Every type contained in a branching or repeating type must resolve all futures created in it, as
+                    |must the protocol as a whole.
+                    |
+                    |Unresolved futures: ${unresolvedLocalFutures.map { it.value }.intersperse(", ")}
+                """.trimMargin()
+            )
+        }
+    }
+
+    private fun isGuaranteedToBeResolved(f: Future) =
+        when (val resState = getResolutionState(f)) {
+            is KnownResolutionState -> resState.v
+            is UnknownResolutionState -> false
+        }
 }

@@ -45,15 +45,17 @@ sealed class LocalType {
     }
 
     data class Resolution( // = Put
-        val f: Future // TODO add ADT constructor name
+        val f: Future,
+        val constructor: ADTConstructor?
     ): LocalType() {
-        override fun toString() = "Put ${f.value}"
+        override fun toString() = "Put ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
     data class Fetching( // = Get
-        val f: Future // TODO add ADT constructor name
+        val f: Future,
+        val constructor: ADTConstructor?
     ): LocalType() {
-        override fun toString() = "Get ${f.value}"
+        override fun toString() = "Get ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
     data class Suspension( // Await, TODO maybe call it Release, too, to redce confusion
@@ -73,7 +75,7 @@ sealed class LocalType {
     data class Choice(
         val choices: List<LocalType>
     ): LocalType() {
-        override fun toString() = "⊕{${choices.map{ it.toString() }.intersperse(", ")}"
+        override fun toString() = "⊕{${choices.map{ it.toString() }.intersperse(", ")}}"
     }
 
     // &f{Lj}
@@ -81,7 +83,7 @@ sealed class LocalType {
         val f: Future,
         val branches: List<LocalType>
     ): LocalType() {
-        override fun toString() = "&${f.value}{${branches.map{ it.toString() }.intersperse(", ")}"
+        override fun toString() = "&${f.value}{${branches.map{ it.toString() }.intersperse(", ")}}"
     }
 
     data class Concatenation(
@@ -122,6 +124,35 @@ sealed class LocalType {
             is Termination -> visitor.visit(this)
         }
 }
+
+val LocalType.head: LocalType
+    get() = when (this) {
+        is LocalType.Concatenation -> this.lhs.head
+        else -> this
+    }
+
+val LocalType.tail: LocalType?
+    get() = when (this) {
+        is LocalType.Concatenation ->
+            if (this.lhs is LocalType.Concatenation) {
+                LocalType.Concatenation(this.lhs.tail!!, this.rhs)
+            }
+
+            else {
+                this.rhs
+            }
+        else -> null
+    }
+
+infix fun LocalType?.concat(rhs: LocalType?): LocalType? =
+    when {
+        this == null -> rhs
+        rhs == null -> this
+        else -> LocalType.Concatenation(
+            lhs = this,
+            rhs = this
+        )
+    }
 
 interface LocalTypeVisitor<ReturnT> {
     fun visit(type: LocalType.Initialization): ReturnT

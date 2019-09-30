@@ -3,6 +3,8 @@ package de.ahbnr.sessiontypeabs.cli
 import de.ahbnr.sessiontypeabs.compiler.exceptions.ABSException
 import de.ahbnr.sessiontypeabs.compiler.exceptions.CompilerException
 import de.ahbnr.sessiontypeabs.compiler.exceptions.GlobalTypeException
+import de.ahbnr.sessiontypeabs.compiler.exceptions.LocalTypeException
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.FinalizationException
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.ProjectionException
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
 import de.ahbnr.sessiontypeabs.types.parser.ParserException
@@ -27,7 +29,7 @@ fun extractUnknownFiles(files: Iterable<String>) =
 fun handleCompilerException(exception: CompilerException) {
     val header = when(exception) {
         is ProjectionException -> "The following error occurred during projection:"
-        is TransferException -> "The following error occurred while validating a global type:"
+        is TransferException, is FinalizationException -> "The following error occurred while validating a global type:"
         is ParserException -> "The following error occurred while parsing type specifications:"
         else -> "The following error occurred during compilation:"
     }

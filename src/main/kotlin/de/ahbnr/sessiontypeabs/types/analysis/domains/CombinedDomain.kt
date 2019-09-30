@@ -3,9 +3,12 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Finalizable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
+import de.ahbnr.sessiontypeabs.types.analysis.exceptions.FinalizationException
+import de.ahbnr.sessiontypeabs.types.intersperse
 
 /**
  * Combines all other domains into one analysis/validation mechanism for global session
@@ -20,7 +23,9 @@ data class CombinedDomain(
     private val participantsTracker: ParticipantsDomain = ParticipantsDomain()
 ): Mergeable<CombinedDomain>,
     Transferable<GlobalType, CombinedDomain>,
-    Repeatable<CombinedDomain> {
+    Repeatable<CombinedDomain>,
+    Finalizable<CombinedDomain>
+{
     /**
      * A loop is considered self-contained, iff it is being considered self-contained by all
      * composite domains.
@@ -64,6 +69,8 @@ data class CombinedDomain(
             participantsTracker = participantsTracker merge rhs.participantsTracker
         )
 
+    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
+
     fun getSuspensionsOnFuture(f: Future) =
         classActivity
             .getClassesSuspendedOnFuture(f).mapNotNull {
@@ -71,6 +78,14 @@ data class CombinedDomain(
                     .getCurrentFutureForClass(c)
                     ?.let { SuspensionInfo(c, it) }
             }
+
+    fun getUsedFutures(): Set<Future> =
+        futureFreshness.usedFutures
+
+    fun getActiveFutures(): Set<Future> =
+        getParticipants()
+            .mapNotNull { getActiveFuture(it) }
+            .toSet()
 
     fun getActiveFuture(c: Class): Future? =
         if (classActivity.isActive(c)) {
@@ -81,8 +96,11 @@ data class CombinedDomain(
             null
         }
 
+    fun getFuturesToTargetMapping() = futureFreshness.futuresToTargets
+
     fun getParticipants() =
         participantsTracker.participants
+
 }
 
 data class SuspensionInfo (

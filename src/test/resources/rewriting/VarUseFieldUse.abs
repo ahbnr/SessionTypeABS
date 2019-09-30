@@ -1,0 +1,23 @@
+module Test;
+
+interface Main {
+    Unit main();
+}
+
+class A implements Main {
+    Int iAmAField = 0; // should be rewritten to this.iAmAField
+    Unit main() {
+        Int iAmAVar = 42;
+        println(toString(iAmAVar));
+
+        iAmAField = 12;
+
+        println(toString(iAmAField)); // should be rewritten to this.iAmAField
+    }
+}
+
+{
+    Main a = new A();
+
+    a.main();
+}

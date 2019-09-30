@@ -235,6 +235,7 @@ fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>
             GlobalType.Fetching(
                 c = Class(ctx.fetch().classId.text),
                 f = Future(ctx.fetch().future.text),
+                constructor = ctx.fetch().constructor?.text?.let{ADTConstructor(it)},
                 fileContext = buildFileContext(ctx)
             )
 
@@ -242,6 +243,7 @@ fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>
             GlobalType.Resolution(
                 c = Class(ctx.resolve().classId.text),
                 f = Future(ctx.resolve().future.text),
+                constructor = ctx.resolve().constructor?.text?.let{ADTConstructor(it)},
                 fileContext = buildFileContext(ctx)
             )
 
@@ -254,7 +256,7 @@ fun parseGlobalType(inputStream: InputStream, fileName: String = "<Unknown File>
 
         override fun visitBranching(ctx: GlobalTypesParser.BranchingContext) =
             GlobalType.Branching(
-                c = Class(ctx.branch().classId.text),
+                choosingActor = Class(ctx.branch().classId.text),
                 branches = ctx.branch().globalType().map { subCtx -> subCtx.accept(this) },
                 fileContext = buildFileContext(ctx)
             )

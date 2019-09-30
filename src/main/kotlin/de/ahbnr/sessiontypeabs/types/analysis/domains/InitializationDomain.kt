@@ -1,6 +1,7 @@
 package de.ahbnr.sessiontypeabs.types.analysis.domains
 
 import de.ahbnr.sessiontypeabs.types.GlobalType
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Finalizable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
@@ -14,7 +15,8 @@ data class InitializationDomain(
     val initialized: Boolean = false
 ): Mergeable<InitializationDomain>,
     Transferable<GlobalType, InitializationDomain>,
-    Repeatable<InitializationDomain>
+    Repeatable<InitializationDomain>,
+    Finalizable<InitializationDomain>
 {
     /**
      * A loop is always considered self-contained by this domain.
@@ -58,4 +60,6 @@ data class InitializationDomain(
 
     override fun merge(rhs: InitializationDomain) =
         copy(initialized = initialized && rhs.initialized) // TODO: Correct choice?
+
+    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
 }

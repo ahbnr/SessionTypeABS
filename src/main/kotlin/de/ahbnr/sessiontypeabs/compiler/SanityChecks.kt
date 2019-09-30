@@ -11,7 +11,7 @@ import de.ahbnr.sessiontypeabs.types.Class
  *                          global Session Types, but which was not found during
  *                          modification of the ABS model.
  */
-fun checkForMissingParticipants(protocols: List<AnalyzedGlobalType<CombinedDomain>>, modLog: ModificationLog) {
+fun checkForMissingParticipants(protocols: Collection<AnalyzedGlobalType<CombinedDomain>>, modLog: ModificationLog) {
     val expectedParticipants = protocols
         .fold(emptySet<Class>()) {
                 acc, nextProtocol -> acc union nextProtocol.postState.getParticipants()

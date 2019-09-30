@@ -3,10 +3,8 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.*
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
-import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.join
 import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.JoinSemiFlatLattice
 import de.ahbnr.sessiontypeabs.types.analysis.domains.utils.areMapsWithDefaultValEqual
 import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
@@ -37,7 +35,8 @@ data class ClassActivityDomain(
     private val classStates: Map<Class, ActivityState> = emptyMap()
 ): Mergeable<ClassActivityDomain>,
     Transferable<GlobalType, ClassActivityDomain>,
-    Repeatable<ClassActivityDomain>
+    Repeatable<ClassActivityDomain>,
+    Finalizable<ClassActivityDomain>
 {
     /**
      * A loop is considered self-contained here, iff the activity state of no class changed.
@@ -280,4 +279,6 @@ data class ClassActivityDomain(
 
         return classState is KnownActivityState && classState.v is ActivityType.Active
     }
+
+    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
 }

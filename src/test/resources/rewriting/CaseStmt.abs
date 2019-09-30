@@ -1,0 +1,22 @@
+module Test;
+
+interface Main {
+    Unit main();
+}
+
+data AorB = ConA | ConB;
+
+class A implements Main {
+    Unit main() {
+        case ConA {
+            ConA => println("It's A!");
+            ConB => println("It's B!");
+        }
+    }
+}
+
+{
+    Main a = new A();
+
+    a.main();
+}

@@ -1,0 +1,17 @@
+module Test;
+
+interface Main {
+    Unit main();
+}
+
+class A implements Main {
+    Unit main() {
+        1;
+    }
+}
+
+{
+    Main a = new A();
+
+    a.main();
+}

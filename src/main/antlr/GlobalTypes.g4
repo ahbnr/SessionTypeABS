@@ -18,8 +18,8 @@ interact: caller=qualified_class_identifier '-' future=IDENTIFIER '->' callee=qu
 releaseR: 'Rel('classId=qualified_class_identifier ',' future=IDENTIFIER ')';
 repeat: '(' repeatedType=globalType ')*';
 branch: classId=qualified_class_identifier '{' (globalType (',' globalType)*)? '}';
-fetch: classId=qualified_class_identifier 'fetches' future=IDENTIFIER;
-resolve: classId=qualified_class_identifier 'resolves' future=IDENTIFIER;
+fetch: classId=qualified_class_identifier 'fetches' future=IDENTIFIER ('as' constructor=TYPE_IDENTIFIER)?;
+resolve: classId=qualified_class_identifier 'resolves' future=IDENTIFIER ('with' constructor=TYPE_IDENTIFIER)?;
 skip: 'skip';
 
 qualified_class_identifier: (TYPE_IDENTIFIER '.')* TYPE_IDENTIFIER ;

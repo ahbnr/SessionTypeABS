@@ -5,8 +5,8 @@ package de.ahbnr.sessiontypeabs.compiler
  * to Erlang.
  */
 fun compile(absSourceFileNames: Iterable<String>, typeSourceFileNames: Iterable<String>) {
-    val typeBuild = buildTypes(typeSourceFileNames)
-    val modelBuild = buildModel(absSourceFileNames, typeBuild)
+    val typeBuilds = buildTypes(typeSourceFileNames)
+    val modelBuild = buildModel(absSourceFileNames, typeBuilds)
 
     modelToErlang(modelBuild.model)
 }

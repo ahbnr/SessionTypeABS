@@ -1,0 +1,33 @@
+module Fetching;
+
+interface AI {
+    Unit m();
+}
+
+class A (BI b) implements AI {
+    Fut<Int> f2;
+
+    Unit m() {
+        f2 = b!m();
+        await f2?;
+
+        Int result = f2.get;
+    }
+}
+
+interface BI {
+    Int m();
+}
+
+class B implements BI {
+    Int m() {
+        return 42;
+    }
+}
+
+{
+    BI b = new B();
+    AI a = new A(b);
+
+    await a!m();
+}

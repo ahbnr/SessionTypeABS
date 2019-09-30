@@ -4,6 +4,8 @@ import de.ahbnr.sessiontypeabs.codegen.analysis.ReactivationPoint
 import de.ahbnr.sessiontypeabs.codegen.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
 import de.ahbnr.sessiontypeabs.codegen.analysis.findReturnStmt
+import de.ahbnr.sessiontypeabs.head
+import de.ahbnr.sessiontypeabs.tail
 import de.ahbnr.sessiontypeabs.types.Method
 import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 import de.ahbnr.sessiontypeabs.types.analysis.Transition
@@ -598,14 +600,6 @@ private fun genReturnStmtPostConditionAssertReplacement(returnStmt: ReturnStmt, 
         )
     )
 }
-
-// FIXME move into global util library
-// https://stackoverflow.com/questions/35808022/kotlin-list-tail-function
-val <T> List<T>.tail: List<T>
-    get() = drop(1)
-
-val <T> List<T>.head: T
-    get() = first()
 
 // TODO KDoc
 data class ReturnStmtReplacement(

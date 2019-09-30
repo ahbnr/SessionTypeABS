@@ -1,6 +1,7 @@
 package de.ahbnr.sessiontypeabs.types.analysis
 
 import de.ahbnr.sessiontypeabs.types.GlobalType
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Finalizable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
@@ -17,15 +18,27 @@ import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
  * domain instances as pre and poststates, since they contain useful
  * information for further processing (see [project], etc.).
  */
-fun <DomainT> execute(preState: DomainT, type: GlobalType)
+fun <DomainT> execute(preState: DomainT, type: GlobalType): AnalyzedGlobalType<DomainT>
     where
     DomainT: Mergeable<DomainT>,
     DomainT: Transferable<GlobalType, DomainT>,
-    DomainT: Repeatable<DomainT>
+    DomainT: Repeatable<DomainT>,
+    DomainT: Finalizable<DomainT>
+{
+    return applyFinalization(executeStep(preState, type))
+}
+
+
+private fun <DomainT> executeStep(preState: DomainT, type: GlobalType)
+    where
+    DomainT: Mergeable<DomainT>,
+    DomainT: Transferable<GlobalType, DomainT>,
+    DomainT: Repeatable<DomainT>,
+    DomainT: Finalizable<DomainT>
 =  when (type) {
-    is GlobalType.Concatenation -> execute(preState, type)
-    is GlobalType.Branching -> execute(preState, type)
-    is GlobalType.Repetition -> execute(preState, type)
+    is GlobalType.Concatenation -> executeStep(preState, type)
+    is GlobalType.Branching -> executeStep(preState, type)
+    is GlobalType.Repetition -> executeStep(preState, type)
     else -> {
         val postState = preState.transfer(type)
 
@@ -37,14 +50,15 @@ fun <DomainT> execute(preState: DomainT, type: GlobalType)
     }
 }
 
-private fun <T> execute(preState: T, type: GlobalType.Concatenation): AnalyzedGlobalType<T>
+private fun <T> executeStep(preState: T, type: GlobalType.Concatenation): AnalyzedGlobalType<T>
     where
         T: Mergeable<T>,
         T: Transferable<GlobalType, T>,
-        T: Repeatable<T>
+        T: Repeatable<T>,
+        T: Finalizable<T>
 {
-    val leftAnalysis = execute(preState, type.lhs)
-    val rightAnalysis = execute(leftAnalysis.postState, type.rhs)
+    val leftAnalysis = executeStep(preState, type.lhs)
+    val rightAnalysis = executeStep(leftAnalysis.postState, type.rhs)
 
     return AnalyzedGlobalType.ConcatenationType(
         type = type,
@@ -55,15 +69,18 @@ private fun <T> execute(preState: T, type: GlobalType.Concatenation): AnalyzedGl
     )
 }
 
-private fun <T> execute(preState: T, type: GlobalType.Branching): AnalyzedGlobalType<T>
+private fun <T> executeStep(preState: T, type: GlobalType.Branching): AnalyzedGlobalType<T>
     where
     T: Mergeable<T>,
     T: Transferable<GlobalType, T>,
-    T: Repeatable<T>
+    T: Repeatable<T>,
+    T: Finalizable<T>
 {
     val branchAnalysis = type
         .branches
-        .map { branchT -> execute(preState, branchT) }
+        .map { branchT ->
+            applyFinalization(executeStep(preState, branchT))
+        }
 
     // Combine resulting states from all branches into one
     // possibly more abstract post state, which covers all of them.
@@ -150,11 +167,12 @@ private fun <T> execute(preState: T, type: GlobalType.Branching): AnalyzedGlobal
  *
  */
 
-private fun <T> execute(preState: T, type: GlobalType.Repetition): AnalyzedGlobalType<T>
+private fun <T> executeStep(preState: T, type: GlobalType.Repetition): AnalyzedGlobalType<T>
     where
     T: Mergeable<T>,
     T: Transferable<GlobalType, T>,
-    T: Repeatable<T>
+    T: Repeatable<T>,
+    T: Finalizable<T>
 {
     // We can weaken the self-containedness requirement, if the following holds:
     //  (1) An iteration can make a state always only more abstract or results in an equal state
@@ -162,10 +180,10 @@ private fun <T> execute(preState: T, type: GlobalType.Repetition): AnalyzedGloba
     //
     // OR other possibilities, see ASV
     //
-    // In this case we could execute the loop until it stabilizes and merge all possible results.
+    // In this case we could executeStep the loop until it stabilizes and merge all possible results.
 
     // Self-containedness requirement
-    val iterationResult = execute(preState, type.repeatedType)
+    val iterationResult = applyFinalization(executeStep(preState, type.repeatedType))
 
     val errorDescriptions = mutableListOf<String>()
     if (iterationResult.postState.loopContained(preState, errorDescriptions)) {
@@ -185,3 +203,20 @@ private fun <T> execute(preState: T, type: GlobalType.Repetition): AnalyzedGloba
     }
 }
 
+private fun <DomainT> applyFinalization(type: AnalyzedGlobalType<DomainT>)
+    where DomainT: Finalizable<DomainT>
+=
+    when (type) {
+        is AnalyzedGlobalType.ConcatenationType<DomainT> -> type.copy(
+            postState = type.postState.finalizeScope(type.type)
+        )
+        is AnalyzedGlobalType.BranchingType<DomainT> -> type.copy(
+            postState = type.postState.finalizeScope(type.type)
+        )
+        is AnalyzedGlobalType.RepetitionType<DomainT> -> type.copy(
+            postState = type.postState.finalizeScope(type.type)
+        )
+        is AnalyzedGlobalType.TerminalType<DomainT> -> type.copy(
+            postState = type.postState.finalizeScope(type.type)
+        )
+    }

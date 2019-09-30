@@ -208,7 +208,8 @@ fun ruleInteract(randomSource: RandomSource, globalData: GeneratorState, localDa
                 ProtocolTree.Seed(seed2Data),
                 ProtocolTree.Leaf(GlobalType.Resolution(
                     c = Class("Generated.${callee.value}"),
-                    f = future
+                    f = future,
+                    constructor = null
                 )),
                 ProtocolTree.Seed(seed3Data)
             )
@@ -315,7 +316,8 @@ fun ruleRead(randomSource: RandomSource, globalData: GeneratorState, localData: 
         listOf(
             ProtocolTree.Leaf(GlobalType.Fetching(
                 c = Class("Generated.${readingActor.value}"),
-                f = readFuture
+                f = readFuture,
+                constructor = null
             )),
             ProtocolTree.Seed(seedData)
         )
@@ -692,7 +694,8 @@ fun ruleBranchingInteract(randomSource: RandomSource, globalData: GeneratorState
                         ProtocolTree.Seed(seed2Data),
                         ProtocolTree.Leaf(GlobalType.Resolution(
                             c = Class("Generated.${callee.value}"),
-                            f = future
+                            f = future,
+                            constructor = null
                         ))
                     )
                 )

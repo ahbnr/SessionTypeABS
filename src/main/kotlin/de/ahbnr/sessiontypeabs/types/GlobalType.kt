@@ -54,18 +54,20 @@ sealed class GlobalType {
 
     data class Resolution(
         val c: Class,
-        val f: Future, // TODO add ADT constructor name
+        val f: Future,
+        val constructor: ADTConstructor?,
         override val fileContext: FileContext? = null
     ): GlobalType() {
-        override fun toString() = "${c.value} resolves ${f.value}"
+        override fun toString() = "${c.value} resolves ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
     data class Fetching( // TODO better name
         val c: Class,
-        val f: Future, // TODO add ADT constructor name
+        val f: Future,
+        val constructor: ADTConstructor?,
         override val fileContext: FileContext? = null
     ): GlobalType() {
-        override fun toString() = "${c.value} fetches ${f.value}"
+        override fun toString() = "${c.value} fetches ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
     data class Release(
@@ -77,11 +79,11 @@ sealed class GlobalType {
     }
 
     data class Branching(
-        val c: Class,
+        val choosingActor: Class,
         val branches: List<GlobalType>,
         override val fileContext: FileContext? = null
     ): GlobalType() {
-        override fun toString() = "${c.value}{${branches.map{ it.toString() }.intersperse(", ")}}"
+        override fun toString() = "${choosingActor.value}{${branches.map{ it.toString() }.intersperse(", ")}}"
     }
 
     data class Repetition(
@@ -108,6 +110,12 @@ sealed class GlobalType {
             is Skip -> visitor.visit(this)
         }
 }
+
+val GlobalType.head: GlobalType
+    get() = when (this) {
+        is GlobalType.Concatenation -> this.lhs.head
+        else -> this
+    }
 
 interface GlobalTypeVisitor<ReturnT> {
     fun visit(type: GlobalType.Repetition): ReturnT

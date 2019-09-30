@@ -1,0 +1,21 @@
+module Test;
+
+interface Main {
+    Unit main();
+}
+
+class A implements Main {
+    Unit main() {
+        List<Int> lst = list[1, 2, 3];
+
+        foreach(x in lst) {
+            println(toString(x));
+        }
+    }
+}
+
+{
+    Main a = new A();
+
+    a.main();
+}

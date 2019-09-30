@@ -1,0 +1,37 @@
+module Branching2;
+
+interface AI {
+    Unit m();
+}
+
+class A (BI b) implements AI {
+    Fut<Unit> f2;
+    Fut<Unit> f3;
+
+    Unit m() {
+        if (random(2) == 0) {
+            f2 = b!m1();
+        }
+
+        else {
+            f3 = b!m2();
+        }
+    }
+}
+
+interface BI {
+    Unit m1();
+    Unit m2();
+}
+
+class B implements BI {
+    Unit m1() { }
+    Unit m2() { }
+}
+
+{
+    BI b = new B();
+    AI a = new A(b);
+
+    await a!m();
+}

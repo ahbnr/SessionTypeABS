@@ -3,6 +3,7 @@ package de.ahbnr.sessiontypeabs.types.analysis.domains
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.GlobalType
 import de.ahbnr.sessiontypeabs.types.GlobalTypeVisitor
+import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Finalizable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Mergeable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.types.analysis.domains.interfaces.Transferable
@@ -18,7 +19,8 @@ data class ParticipantsDomain(
     val participants: Set<Class> = emptySet()
 ): Mergeable<ParticipantsDomain>,
     Transferable<GlobalType, ParticipantsDomain>,
-    Repeatable<ParticipantsDomain>
+    Repeatable<ParticipantsDomain>,
+    Finalizable<ParticipantsDomain>
 {
     /**
      * A loop is always considered self-contained by this domain.
@@ -60,4 +62,6 @@ data class ParticipantsDomain(
         this.copy(
             participants = participants union rhs.participants
         )
+
+    override fun finalizeScope(finalizedType: GlobalType) = this.copy()
 }

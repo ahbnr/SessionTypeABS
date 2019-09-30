@@ -5,6 +5,7 @@ import de.ahbnr.sessiontypeabs.codegen.astmods.enforceSessionTypesOnModel
 import de.ahbnr.sessiontypeabs.compiler.exceptions.ABSException
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
+import de.ahbnr.sessiontypeabs.types.analysis.model.checkModel
 import org.abs_models.backend.erlang.ErlangBackend
 import org.abs_models.common.CompilerCondition
 import org.abs_models.frontend.ast.Model
@@ -39,18 +40,24 @@ fun parseModel(absSourceFileNames: Iterable<String>): Model {
  * Parses the ABS source files and applies the given local Session Types on the
  * model, such that it complies to the protocol induced by them at runtime.
  */
-fun buildModel(absSourceFileNames: Iterable<String>, typeBuild: TypeBuild, noChecks: Boolean = false): ModelBuild {
+fun buildModel(absSourceFileNames: Iterable<String>, typeBuilds: TypeBuildCollection, noChecks: Boolean = false): ModelBuild {
     val model = parseModel(absSourceFileNames)
     if (!noChecks) {
         checkAndRewriteModel(model)
+        model.doFullTraversal() // make sure we triggered all rewrites
+
+        // static verification
+        for (typeBuild in typeBuilds.typeBuilds) {
+            checkModel(model, typeBuild)
+        }
     }
 
     // Modify ABS model
-    val modLog = applyTypesToModel(model, typeBuild.condensedTypes)
+    val modLog = applyTypesToModel(model, typeBuilds.mergedCondensedTypes())
 
     if (!noChecks) {
         // Check whether all participants could be modified (none was missing in the model)
-        checkForMissingParticipants(typeBuild.analyzedProtocols, modLog)
+        checkForMissingParticipants(typeBuilds.mergedGlobalTypes(), modLog)
 
         checkAndRewriteModel(model)
     }

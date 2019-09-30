@@ -2,6 +2,15 @@ package de.ahbnr.sessiontypeabs.codegen.analysis
 
 import org.abs_models.frontend.ast.*
 
+val <T> ASTNode<T>.parents: Set<ASTNode<*>> where T : ASTNode<*>
+    get() = if (this.parent == null) {
+        emptySet()
+    }
+
+    else {
+        setOf(this.parent) union this.parent.parents
+    }
+
 // Functions to help find specific nodes in an AST snippet
 
 fun <T> findAwaits(n: ASTNode<T>): List<AwaitStmt>
@@ -15,6 +24,15 @@ fun <T> findSuspends(n: ASTNode<T>): List<SuspendStmt>
 
 fun <T> findSyncCalls(n: ASTNode<T>): List<SyncCall>
         where T : ASTNode<*> = n.findChildren(SyncCall::class.java)
+
+fun <T> findCalls(n: ASTNode<T>): List<Call>
+    where T : ASTNode<*> = n.findChildren(Call::class.java)
+
+fun <T> findEffExps(n: ASTNode<T>): List<EffExp>
+    where T : ASTNode<*> = n.findChildren(EffExp::class.java)
+
+inline fun <reified T> ASTNode<*>.findChildren(): List<T>
+    = this.findChildren(T::class.java)
 
 /* Functions to find the end of execution for methods
    This includes:

@@ -18,7 +18,7 @@ class PrintLocalTypes : Runnable {
             val typeBuild = buildTypes(files.asIterable())
 
             println(
-                typeBuild.localTypes.map { (actor, localType) ->
+                typeBuild.mergedLocalTypes().map { (actor, localType) ->
                     "${actor.value}:\n$localType"
                 }
                     .intersperse("\n\n")

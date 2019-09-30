@@ -1,0 +1,36 @@
+module Repetition;
+
+interface AI {
+    Unit m();
+}
+
+class A (BI b) implements AI {
+    Fut<Int> f2;
+
+    Unit m() {
+        Int i = 0;
+        while (i < 3) {
+            f2 = b!m();
+            await f2?;
+
+            i = i + 1;
+        }
+    }
+}
+
+interface BI {
+    Int m();
+}
+
+class B implements BI {
+    Int m() {
+        return 42;
+    }
+}
+
+{
+    BI b = new B();
+    AI a = new A(b);
+
+    await a!m();
+}

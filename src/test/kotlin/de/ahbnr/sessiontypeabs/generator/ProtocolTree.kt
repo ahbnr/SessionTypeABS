@@ -188,7 +188,7 @@ fun collapse(protocolTree: ProtocolTree): GlobalType? = // TODO Introduce skip t
 
             else {
                 GlobalType.Branching(
-                    c = protocolTree.choosingActor,
+                    choosingActor = protocolTree.choosingActor,
                     branches = collapsedSubtrees
                 )
             }

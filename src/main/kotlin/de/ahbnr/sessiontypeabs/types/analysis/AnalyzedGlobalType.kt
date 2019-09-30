@@ -4,7 +4,7 @@ import de.ahbnr.sessiontypeabs.types.GlobalType
 
 /**
  * Wraps global session types together with their abstract execution state
- * produced by [execute], which provides additional information useful
+ * produced by [executeStep], which provides additional information useful
  * for validation and projection (see [project]) of a global session type.
  */
 sealed class AnalyzedGlobalType<StateT>(

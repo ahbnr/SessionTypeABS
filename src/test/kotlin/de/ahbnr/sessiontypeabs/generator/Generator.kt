@@ -68,7 +68,8 @@ fun generatorTransition(randomSource: RandomSource): GeneratorState {
             ProtocolTree.Leaf(
                 GlobalType.Resolution(
                     c = Class("Generated.${initCallee.value}"),
-                    f = initFuture
+                    f = initFuture,
+                    constructor = null
                 )
             )
         ))
