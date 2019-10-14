@@ -1,0 +1,106 @@
+module GradingSystem;
+
+import * from SessionTypeABS.Tracing;
+
+interface ComputationServerI extends TraceableI {
+    Unit compute();
+}
+
+class ComputationServer (ServiceDeskI d, StudentI s) implements ComputationServerI {
+    Fut<Unit> publishTask;
+    Fut<Unit> announceTask;
+
+    TraceStore traceStore = initialTraceStore(
+        "ComputationServer",
+        map[Pair("compute", 1)]
+    );
+
+    uses Traceable;
+
+    Unit compute() {
+        traceStore = traceInvocation(traceStore, "compute", thisDestiny);
+        Int grade = random(6) + 1;
+
+        publishTask = d!publish(grade);
+        announceTask = s!announce();
+
+        traceStore = markMethodCompleted(traceStore, "compute");
+    }
+}
+
+interface ServiceDeskI extends TraceableI {
+    Unit publish(Int grade);
+    String request();
+}
+
+class ServiceDesk implements ServiceDeskI {
+    Maybe<Int> grade = Nothing;
+
+    TraceStore traceStore = initialTraceStore(
+        "ServiceDesk",
+        map[Pair("publish", 1), Pair("request", 1)]
+    );
+
+    uses Traceable;
+
+    Unit publish(Int grade) {
+        traceStore = traceInvocation(traceStore, "publish", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "publish");
+
+        this.grade = Just(grade);
+    }
+
+    String request() {
+        traceStore = traceInvocation(traceStore, "request", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "request");
+
+        return "This is your grade: " + toString(fromJust(grade));
+    }
+}
+
+interface StudentI extends TraceableI {
+    Unit announce();
+}
+
+class Student (ServiceDeskI d) implements StudentI {
+    Fut<String> requestTask;
+
+    TraceStore traceStore = initialTraceStore(
+        "Student",
+        map[Pair("announce", 1)]
+    );
+
+    uses Traceable;
+
+    Unit announce() {
+        traceStore = traceInvocation(traceStore, "announce", thisDestiny);
+
+        println("Student: Got notification that my grades are complete!");
+
+        println("Student: Lets see how I did in my exam...");
+        this.requestTask = d!request();
+
+        Fut<String> requestTask = this.requestTask; // Hack due to ABS bug, TODO remove
+
+        await requestTask?;
+        traceStore = traceReactivation(traceStore, "announce", thisDestiny);
+
+        String gradeReport = this.requestTask.get;
+
+        println("Student: Got report: " + gradeReport);
+
+        traceStore = markMethodCompleted(traceStore, "announce");
+    }
+}
+
+{
+    ServiceDeskI d = new ServiceDesk();
+    StudentI s = new Student(d);
+    ComputationServerI c = new ComputationServer(d, s);
+
+    await c!compute();
+
+    await d!printTrace();
+    await s!printTrace();
+    await c!printTrace();
+}

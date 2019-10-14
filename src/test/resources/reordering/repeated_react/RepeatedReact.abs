@@ -1,0 +1,97 @@
+module RepeatedReact;
+
+import * from SessionTypeABS.Tracing;
+
+def Int rounds() = 50;
+def Int delayFactor() = 30;
+
+interface CalleeI extends TraceableI {
+    Unit a();
+    Unit setCaller(CallerI caller);
+}
+
+interface CallerI extends TraceableI {
+    Unit main();
+    Unit callback1();
+    Unit callback2();
+}
+
+class Callee implements CalleeI {
+    TraceStore traceStore = initialTraceStore(
+        "Callee",
+        map[Pair("a", rounds())]
+    );
+
+    CallerI caller;
+
+    uses Traceable;
+
+    Unit a() {
+        traceStore = traceInvocation(traceStore, "a", thisDestiny);
+
+        caller!callback2();
+        // Busy waiting
+        Int i = 0; while (i < delayFactor()) { println("waiting..."); i = i + 1; }
+        caller!callback1();
+
+        traceStore = markMethodCompleted(traceStore, "a");
+    }
+
+    Unit setCaller(CallerI caller) {
+        this.caller = caller;
+    }
+}
+
+class Caller (CalleeI callee) implements CallerI {
+    TraceStore traceStore = initialTraceStore(
+        "Caller",
+        map[Pair("main", 1), Pair("callback1", rounds()), Pair("callback2", rounds())]
+    );
+
+    uses Traceable;
+
+    Unit main() {
+        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+
+        List<Fut<Unit>> futureList = Nil;
+
+        Int times = rounds();
+        while (times > 0) {
+            Fut<Unit> aTask = callee!a();
+            futureList = appendright(futureList, aTask);
+
+            times = times - 1;
+        }
+
+        // Busy waiting
+        Int i = 0; while (i < delayFactor()) { println("waiting..."); i = i + 1; }
+
+        foreach(aTask in futureList) {
+            await aTask?;
+            traceStore = traceReactivation(traceStore, "main", thisDestiny);
+        }
+
+        traceStore = markMethodCompleted(traceStore, "main");
+    }
+
+    Unit callback1() {
+        traceStore = traceInvocation(traceStore, "callback1", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "callback1");
+    }
+
+    Unit callback2() {
+        traceStore = traceInvocation(traceStore, "callback2", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "callback2");
+    }
+}
+
+{
+    CalleeI callee = new Callee();
+    CallerI caller = new Caller(callee);
+    await callee!setCaller(caller);
+
+    await caller!main();
+
+    await caller!printTrace();
+    await callee!printTrace();
+}

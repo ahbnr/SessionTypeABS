@@ -1,0 +1,75 @@
+module ConsecutiveCalls;
+
+import * from SessionTypeABS.Tracing;
+
+def Int rounds() = 50;
+def Int delayFactor() = 50;
+
+interface CalleeI extends TraceableI {
+    Unit a();
+    Unit b();
+}
+
+interface CallerI extends TraceableI {
+    Unit main();
+}
+
+class Callee implements CalleeI {
+    TraceStore traceStore = initialTraceStore(
+        "Callee",
+        map[Pair("a", rounds()), Pair("b", rounds())]
+    );
+
+    uses Traceable;
+
+    Unit a() {
+        traceStore = traceInvocation(traceStore, "a", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "a");
+    }
+
+    Unit b() {
+        traceStore = traceInvocation(traceStore, "b", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "b");
+    }
+}
+
+class Caller (CalleeI callee) implements CallerI {
+    TraceStore traceStore = initialTraceStore(
+        "Caller",
+        map[Pair("main", 1)]
+    );
+
+    Fut<Unit> aTask;
+    Fut<Unit> bTask;
+
+    uses Traceable;
+
+    Unit main() {
+        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+
+        Int times = rounds();
+
+        while (times > 0) {
+            this.bTask = callee!b();
+
+            // Busy waiting
+            Int i = 0; while (i < delayFactor()) { println("waiting..."); i = i + 1; }
+
+            this.aTask = callee!a();
+
+            times = times - 1;
+        }
+
+        traceStore = markMethodCompleted(traceStore, "main");
+    }
+}
+
+{
+    CalleeI callee = new Callee();
+    CallerI caller = new Caller(callee);
+
+    await caller!main();
+
+    await caller!printTrace();
+    await callee!printTrace();
+}

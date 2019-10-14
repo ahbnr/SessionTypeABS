@@ -13,11 +13,14 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
     testImplementation('org.junit.jupiter:junit-jupiter:5.5.0')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.5.0')
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.5.0")
     testImplementation("org.assertj:assertj-core:3.12.0")
     testImplementation("com.zaxxer:nuprocess:1.2.3")
@@ -25,12 +28,17 @@ dependencies {
     testImplementation 'com.pholser:junit-quickcheck-core:0.9'
     testImplementation 'com.pholser:junit-quickcheck-generators:0.9'
 
+    testRuntime ('org.junit.jupiter:junit-jupiter-engine:5.5.0')
+    test.useJUnitPlatform() // fix "test events not received" bug in IDEA
+
     //implementation project('abstools')
     implementation files('../abstools/frontend/dist/absfrontend.jar')
 
     implementation 'info.picocli:picocli:4.0.0-beta-2'
 
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+
+    implementation "com.github.adelnizamutdinov:kotlin-either:2.0.1"
 
     // set antlr version
     antlr "org.antlr:antlr4:4.7"

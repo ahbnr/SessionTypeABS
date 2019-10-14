@@ -15,7 +15,7 @@ fun isNewCommunicationInert(
     newExp: NewExp,
     environment: StmtsEnvironment
 ): Boolean =
-    environment.actorModelMapping.findActorByType(newExp.type) == null
+    !environment.isActor(newExp)
 
 fun <T> isCommunicationInert(
     node: ASTNode<T>,
@@ -47,7 +47,7 @@ fun <T> isCommunicationInert(
             if (node.varDeclNoTransform.hasInitExp() && node.varDeclNoTransform.initExp != null) {
                 isCommunicationInert(node.varDeclNoTransform.initExp, environment)
             } else {
-                false
+                true // FIXME: Should be true?
             }
         is AssignStmt -> {
                 val assignedVarOrField = node.varNoTransform
@@ -57,7 +57,7 @@ fun <T> isCommunicationInert(
                 (assignedVarOrField !is VarUse || !environment.doesVariableStoreAGetValue(assignedVarOrField)) &&
                 isCommunicationInert(assignedValue, environment)
             }
-        is Call -> environment.actorModelMapping.findActorByType(node.calleeNoTransform.type) == null // TODO: Does not allow calling methods, which are not specified in the protocol. Do we want this?
+        is Call -> !environment.isActor(node.calleeNoTransform) // TODO: Does not allow calling methods, which are not specified in the protocol. Do we want this?
         is NewExp -> isNewCommunicationInert(node, environment)
         else -> false
     }

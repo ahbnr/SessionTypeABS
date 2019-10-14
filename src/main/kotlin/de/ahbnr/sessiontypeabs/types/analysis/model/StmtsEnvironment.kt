@@ -1,7 +1,9 @@
 package de.ahbnr.sessiontypeabs.types.analysis.model
 
 import de.ahbnr.sessiontypeabs.types.Future
+import org.abs_models.frontend.ast.Exp
 import org.abs_models.frontend.ast.FieldUse
+import org.abs_models.frontend.ast.PureExp
 import org.abs_models.frontend.ast.VarUse
 
 data class StmtsEnvironment (
@@ -15,4 +17,8 @@ data class StmtsEnvironment (
 
     fun doesFieldStoreFuture(fieldUse: FieldUse) =
         Future(fieldUse.name) in Futures
+
+    fun isActor(exp: Exp) =
+        actorModelMapping.findActorByType(exp.type) != null
+
 }

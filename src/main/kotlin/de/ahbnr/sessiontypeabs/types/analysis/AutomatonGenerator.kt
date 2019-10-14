@@ -56,10 +56,11 @@ private data class Cache(
  *
  * The resulting automaton will not contain the initial states of the second automaton.
  * Instead the initial transitions of the second automaton will start with the [glueStates].
+ * Also, all transitions leading into the initial state will now end in the [glueStates].
  *
  * @param a0 first automaton
  * @param glueStates in the resulting automaton, copies all initial transitions of [a1] will be included for each glue
- *                   state as its starting state
+ *                   state as its starting state. Same also in the reverse direction.
  * @param a1 second automaton
  * @param finalStates states which shall act as final states of the resulting automaton.
  *                    If set to null, the algorithm will decide automatically on the final states:
@@ -72,25 +73,35 @@ private data class Cache(
  * @throws IllegalArgumentException if the glue states are not part of [a1]
  */
 private fun concatAutomata(a0: SessionAutomaton, glueStates: Set<Int>, a1: SessionAutomaton, finalStates: Set<Int>? = null): SessionAutomaton {
-    if (!a0.Q.containsAll(glueStates)) {
-        throw IllegalArgumentException("To concatenate automata the glue states must all be part of the first automaton")
-    }
+    require(a0.Q.containsAll(glueStates)) { "To concatenate automata the glue states must all be part of the first automaton" }
 
-    val a1InitialTransitions = a1.transitionsForState(a1.q0)
-    val replacementTransitions = a1InitialTransitions.map{
+    val a1InitialTransitions = a1.transitionsOfState(a1.q0)
+    val a1IntoInitialTransitions = a1.transitionsLeadingIntoState(a1.q0)
+    val replacementTransitions =
+        a1InitialTransitions.map{
             initialT -> glueStates.map{qG ->
-        Transition(
-            qG,
-            initialT.verb,
-            initialT.q2
-        )
-    }
-    }.flatten()
+                Transition(
+                    qG,
+                    initialT.verb,
+                    initialT.q2
+                )
+            }
+        }.flatten() +
+        a1IntoInitialTransitions.map{
+            intoInitialT -> glueStates.map{qG ->
+                Transition(
+                    intoInitialT.q1,
+                    intoInitialT.verb,
+                    qG
+                )
+            }
+        }.flatten()
 
-    val resultingDelta =
-        a0.Delta // Δ1 ∪ (Δ2 \ {(a1.q0, <...>)}) ∪ {(q, <...>) | q ∈ F1}
-            .union(a1.Delta.minus(a1InitialTransitions))
-            .union(replacementTransitions)
+    val resultingDelta = // ((Δ1 ∪ Δ2 ∪ {(q, <...>), (<...>, q) | q ∈ G}) \ {(a1.q0, <...>)}) \ {(<...>, a1.q0)}
+        (
+            (a0.Delta union a1.Delta union replacementTransitions) -
+                a1InitialTransitions
+        ) - a1IntoInitialTransitions
 
     // If a1.q0 is final, the glue states which replace a1.q0 must be final too
     val additionalFinalStates =
@@ -195,7 +206,7 @@ private fun genAutomaton(t: CondensedType.Concatenation, c: Cache): SessionAutom
 private fun genAutomaton(t: CondensedType.Repetition, c: Cache): SessionAutomaton {
     val a = genAutomaton(t.repeatedType, c)
 
-    val initialTransitions = a.transitionsForState(a.q0)
+    val initialTransitions = a.transitionsOfState(a.q0)
     val additionalBackTransitions =
         initialTransitions.map{
                 initialT -> a.finalStates.map{qF ->

@@ -1,6 +1,17 @@
 module SessionTypeABS.Tracing;
 
-export TraceStore, initialTraceStore, traceInvocation, traceReactivation, printTrace;
+export TraceStore,
+       initialTraceStore,
+       traceInvocation,
+       traceReactivation,
+       printTrace,
+       markMethodCompleted,
+       haveMethodsCompleted,
+       Traceable,
+       TraceableI;
+
+// utilities
+def A identity<A>(A x) = x;
 
 // Storing Futures
 data FutStore = FutStore(
@@ -24,24 +35,52 @@ def String retrieveFutId(FutStore store, Fut<Any> f) =
             toString(lookupUnsafe(futToId, f));
     };
 
+// Tracking completion of methods. Usually we want only to print traces after a certain set of methods
+// completed at least once.
+
+data CompletionTracker = CompletionTracker(Map<String, Int> completionStatus);
+
+def CompletionTracker initialCompletionTracker(Map<String, Int> methodsToTrack) =
+    CompletionTracker(
+        methodsToTrack
+    );
+
+def CompletionTracker tracker_markCompleted(CompletionTracker tracker, String method) =
+    case tracker {
+        CompletionTracker(mapping) =>
+            CompletionTracker(
+                put(mapping, method, lookupUnsafe(mapping, method) - 1)
+            );
+    };
+
+def Bool tracker_allCompleted(CompletionTracker tracker) =
+    case tracker {
+        CompletionTracker(mapping) =>
+            foldl(
+                (Int next, Bool accum) => next == 0 && accum
+            )(values(mapping), True);
+    };
+
 // Storing Traces
 
-data TraceStore = TraceStore(FutStore futStore, String actorId, String trace);
+data TraceStore = TraceStore(FutStore futStore, CompletionTracker tracker, String actorId, String trace);
 
-def TraceStore initialTraceStore(String actor) = TraceStore(
+def TraceStore initialTraceStore(String actor, Map<String, Int> methodsToTrackCompletionFor) = TraceStore(
         initialFutStore(),
+        initialCompletionTracker(methodsToTrackCompletionFor),
         actor,
         ""
     );
 
 def TraceStore traceInvocation(TraceStore traceStore, String methodName, Fut<Any> destinyVal) =
     case traceStore {
-        TraceStore(futStore, actor, trace) =>
+        TraceStore(futStore, tracker, actor, trace) =>
             let
                 FutStore updatedFutStore = registerFuture(futStore, destinyVal)
             in
                 TraceStore(
                     updatedFutStore,
+                    tracker,
                     actor,
                     trace + "[TRACE] Invocation " + retrieveFutId(updatedFutStore, destinyVal) + " " + actor + " " + methodName + "\n"
                 );
@@ -49,12 +88,38 @@ def TraceStore traceInvocation(TraceStore traceStore, String methodName, Fut<Any
 
 def TraceStore traceReactivation(TraceStore traceStore, String methodName, Fut<Any> destinyVal) =
     case traceStore {
-        TraceStore(futStore, actor, trace) =>
+        TraceStore(futStore, tracker, actor, trace) =>
             TraceStore(
                 futStore,
+                tracker,
                 actor,
                 trace + "[TRACE] Reactivation " + retrieveFutId(futStore, destinyVal) + " " + actor + " " + methodName + "\n"
             );
     };
 
-def Unit printTrace(TraceStore traceStore) = println(trace(traceStore));
+def TraceStore markMethodCompleted(TraceStore store, String methodName) =
+    case store {
+        TraceStore(futStore, tracker, actor, trace) =>
+            TraceStore(
+                futStore,
+                tracker_markCompleted(tracker, methodName),
+                actor,
+                trace
+            );
+    };
+
+def Bool haveMethodsCompleted(TraceStore store) =
+    tracker_allCompleted(tracker(store));
+
+def Unit printTrace(TraceStore traceStore) = println("\n" + trace(traceStore));
+
+trait Traceable = {
+    Unit printTrace() {
+        await haveMethodsCompleted(this.traceStore);
+        printTrace(this.traceStore);
+    }
+}
+
+interface TraceableI {
+    Unit printTrace();
+}

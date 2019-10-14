@@ -6,13 +6,15 @@ import de.ahbnr.sessiontypeabs.types.intersperse
 import org.assertj.core.api.Assertions.assertThat
 import kotlin.math.min
 
-fun assertTrace(actor: Class, expected: List<TraceFragment>, actual: List<TraceFragment>) {
+fun assertTrace(actor: Class, expected: List<TraceFragment>, actual: List<TraceFragment>, parentMessage: String) {
     val futureIds = mutableMapOf<Future, Future>()
 
     fun makeDescriptionMessage(message: String) = """
             $message
             Expected trace: ${expected.mapIndexed{idx, fragment -> "$idx: $fragment"}.intersperse(", ")}
             Actual trace:   ${actual.mapIndexed{idx, fragment -> "$idx: $fragment"}.intersperse(", ")}
+            
+            $parentMessage
         """.trimMargin().trimIndent()
 
     val minTraceLength = min(expected.size, actual.size)
@@ -58,15 +60,15 @@ ${makeDescriptionMessage(message)}
         .isEqualTo(expected.size)
 }
 
-fun assertTraces(expected: Map<Class, List<TraceFragment>>, actual: Map<Class, List<TraceFragment>>) {
+fun assertTraces(expected: Map<Class, List<TraceFragment>>, actual: Map<Class, List<TraceFragment>>, message: String = "") {
     val expectedWithNonEmptyTrace = expected
         .filter { (_, trace) -> trace.isNotEmpty() }
 
     assertThat(actual.keys)
-        .describedAs("Recorded traces do not cover the same actors as the expected traces.")
+        .describedAs("Recorded traces do not cover the same actors as the expected traces. $message")
         .containsExactlyInAnyOrderElementsOf(expectedWithNonEmptyTrace.keys)
 
     for (actor in expectedWithNonEmptyTrace.keys) {
-        assertTrace(actor, expected[actor]!!, actual[actor]!!)
+        assertTrace(actor, expected[actor]!!, actual[actor]!!, message)
     }
 }

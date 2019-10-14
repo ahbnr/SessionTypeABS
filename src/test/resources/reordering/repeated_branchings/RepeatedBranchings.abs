@@ -1,0 +1,83 @@
+module RepeatedBranchings;
+
+import * from SessionTypeABS.Tracing;
+
+def Int rounds() = 50;
+
+interface CalleeI extends TraceableI {
+    Unit a();
+    Unit b();
+    Unit c();
+}
+
+interface CallerI extends TraceableI {
+    Unit main();
+}
+
+class Callee implements CalleeI {
+    TraceStore traceStore = initialTraceStore(
+        "Callee",
+        map[Pair("a", floor(float(rounds()/2))), Pair("b", floor(float(rounds()/2))), Pair("c", floor(float(rounds()/2)))]
+    );
+
+    uses Traceable;
+
+    Unit a() {
+        traceStore = traceInvocation(traceStore, "a", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "a");
+    }
+
+    Unit b() {
+        traceStore = traceInvocation(traceStore, "b", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "b");
+    }
+
+    Unit c() {
+        traceStore = traceInvocation(traceStore, "c", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "c");
+    }
+}
+
+class Caller (CalleeI callee) implements CallerI {
+    TraceStore traceStore = initialTraceStore(
+        "Caller",
+        map[Pair("main", 1)]
+    );
+
+    Fut<Unit> aTask;
+    Fut<Unit> bTask;
+    Fut<Unit> cTask;
+
+    uses Traceable;
+
+    Unit main() {
+        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+
+        Int times = rounds();
+
+        while (times > 0) {
+            if (times % 2 == 0) {
+                this.bTask = callee!b();
+                this.aTask = callee!a();
+            }
+
+            else {
+                this.cTask = callee!c();
+            }
+
+            times = times - 1;
+        }
+
+        traceStore = markMethodCompleted(traceStore, "main");
+    }
+}
+
+{
+    CalleeI callee = new Callee();
+    CallerI caller = new Caller(callee);
+
+    await caller!main();
+
+    await caller!printTrace();
+    await callee!printTrace();
+}

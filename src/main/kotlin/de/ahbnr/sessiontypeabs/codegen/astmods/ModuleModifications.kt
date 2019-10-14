@@ -2,6 +2,7 @@ package de.ahbnr.sessiontypeabs.codegen.astmods
 
 import de.ahbnr.sessiontypeabs.codegen.scheduler
 import de.ahbnr.sessiontypeabs.codegen.schedulerLibModuleName
+import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.analysis.genAutomaton
@@ -22,7 +23,8 @@ import org.abs_models.frontend.ast.*
  */
 fun enforceSessionTypesOnModule(
     m: ModuleDecl,
-    classToType: Map<Class, CondensedType>
+    classToType: Map<Class, CondensedType>,
+    enforcementConfig: EnforcementConfig = EnforcementConfig()
 ): ModificationLog {
     // We need to have an unique name for each ABS scheduler function we generate in the module.
     // Therefore we derive them from a counter.
@@ -38,7 +40,7 @@ fun enforceSessionTypesOnModule(
             val automaton = genAutomaton(type)
 
             val schedulerName = "sched" + schedulerNameCounter++
-            val scheduler = scheduler(schedulerName, automaton)
+            val scheduler = scheduler(schedulerName, automaton, enforcementConfig)
 
             m.addDecl(scheduler)
             modLog.createdSchedulers.add(scheduler)

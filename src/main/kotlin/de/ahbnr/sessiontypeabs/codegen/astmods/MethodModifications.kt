@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
+import de.ahbnr.sessiontypeabs.abstoolsmods.oneshotPrettyPrint
 import de.ahbnr.sessiontypeabs.codegen.analysis.ReactivationPoint
 import de.ahbnr.sessiontypeabs.codegen.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
@@ -529,11 +530,29 @@ private fun genPostConditionAssertionCases(invocStateVarName: String, invocREvTr
 private fun genAssertionStmtFromTransition(transition: Transition) =
     when (transition.verb) {
         is TransitionVerb.InvocREv ->
-            AssertStmt(
-                List(), // no annotations
-                transition.verb.postCondition
-                    ?: throw IllegalArgumentException("The transition contains no post-condition (is null).")
-            )
+            transition.verb.postCondition
+                ?.let { postCondition ->
+                    Block(
+                        List(),
+                        List(
+                            ifThenElse(
+                                NegExp(postCondition.treeCopyNoTransform()),
+                                ExpressionStmt(
+                                    List(),
+                                    callFun(
+                                        "println",
+                                        StringLiteral("A postcondition of method ${transition.verb.method.value} is about to fail.")
+                                    )
+                                )
+                            ),
+                            AssertStmt(
+                                List(), // no annotations
+                                postCondition
+                            )
+                        )
+                    )
+                }
+                ?: throw IllegalArgumentException("The transition contains no post-condition (is null).")
         else -> throw IllegalArgumentException("Transition parameter is not an InvocREv transition, but assertions for post-conditions can only be generated for InvocREv transitions.")
     }
 
@@ -615,7 +634,7 @@ data class ReturnStmtReplacement(
         else {
             originalReturnStmt.replaceWith(leadingStmts.head)
 
-            leadingStmts.tail.forEach(methodBlock::addStmtNoTransform)
+            leadingStmts.tail.forEach{methodBlock.addStmtNoTransform(it)}
 
             methodBlock.addStmtNoTransform(returnReplacement)
         }

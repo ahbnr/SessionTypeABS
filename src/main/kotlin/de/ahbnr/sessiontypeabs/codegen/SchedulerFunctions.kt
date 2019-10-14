@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.codegen
 
+import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Method
 import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 import de.ahbnr.sessiontypeabs.types.analysis.TransitionVerb
@@ -39,7 +40,7 @@ fun schedulerAnnotation(schedfun: String, vararg params: String) =
  *      (set["m1", m2"], queue)
  * ```
  */
-fun scheduler(name: String, automaton: SessionAutomaton) =
+fun scheduler(name: String, automaton: SessionAutomaton, enforcementConfig: EnforcementConfig = EnforcementConfig()) =
     funDecl(
         maybeT(processT()),
         name,
@@ -53,7 +54,7 @@ fun scheduler(name: String, automaton: SessionAutomaton) =
                 List(queueParameter()),
                 stateSwitchCase(stateFieldIdentifier, automaton)
             ),
-            automaton.affectedMethods().map{it.value}.toSet(),
+            enforcementConfig.whitelistedMethods.map(Method::value).toSet(),
             VarUse(schedulerFunQueueParamIdentifier)
         )
     )
@@ -103,7 +104,7 @@ private fun stateSwitchCase(stateParam: String, automaton: SessionAutomaton) =
  * in the current [state].
  */
 private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomaton): FnApp {
-    val transitionVerbs = automaton.transitionsForState(state).map{t -> t.verb}
+    val transitionVerbs = automaton.transitionsOfState(state).map{ t -> t.verb}
     val methodNames = mutableSetOf<Method>()
     val registers = mutableSetOf<Int>()
 

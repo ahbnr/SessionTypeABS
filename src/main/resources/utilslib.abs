@@ -1,0 +1,13 @@
+module SessionTypeABS.Utils;
+
+def List<T> replicate<T>(Int times, T elem) =
+    if (times > 0) then
+        Cons(elem, replicate(times - 1, elem))
+    else
+        Nil;
+
+def List<T> replace<T>(List<T> lst, Int index, T elem) =
+    if (index > 0) then
+        Cons(head(lst), replace(tail(lst), index - 1, elem))
+    else
+        Cons(elem, tail(lst));

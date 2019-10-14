@@ -30,9 +30,14 @@ class SessionAutomaton(
     val registers: Set<Int>,
     val finalStates: Set<Int>
 ) {
-    fun transitionsForState(state: Int) =
+    fun transitionsOfState(state: Int) =
         Delta
             .filter{t -> t.q1 == state}
+            .toSet()
+
+    fun transitionsLeadingIntoState(state: Int) =
+        Delta
+            .filter{t -> t.q2 == state}
             .toSet()
 
     fun affectedMethods() =

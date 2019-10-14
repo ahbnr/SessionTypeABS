@@ -65,11 +65,11 @@ fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>) =
         )
     )
 
-fun applyProtocol(protocol: ParFnAppParam, participants: Set<String>, queue: PureExp) =
+fun applyProtocol(protocol: ParFnAppParam, whitelist: Set<String>, queue: PureExp) =
     callHigherOrderFun(
         "$schedulerLibModuleName.applyProtocol",
         protocol,
-        setC(*participants.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
+        setC(*whitelist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
         queue
     )
 

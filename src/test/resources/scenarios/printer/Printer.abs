@@ -23,7 +23,7 @@ class Client (PrinterI printer) implements ClientI {
 
     Fut<Unit> printPrinterTrace;
 
-    TraceStore traceStore = initialTraceStore("Client");
+    TraceStore traceStore = initialTraceStore("Client", map[]);
 
     Unit main() {
         traceStore = traceInvocation(traceStore, "main", thisDestiny);
@@ -78,7 +78,7 @@ class Client (PrinterI printer) implements ClientI {
 
 class Printer implements PrinterI {
     Int pages = 2;
-    TraceStore traceStore = initialTraceStore("Printer");
+    TraceStore traceStore = initialTraceStore("Printer", map[]);
 
     StatusMsg preparePage() {
         traceStore = traceInvocation(traceStore, "preparePage", thisDestiny);

@@ -16,7 +16,8 @@ class ActorModelMapping {
 
     constructor(
         classes: Iterable<ClassDecl>,
-        sessionType: AnalyzedGlobalType<CombinedDomain>
+        sessionType: AnalyzedGlobalType<CombinedDomain>,
+        verificationConfig: VerificationConfig = VerificationConfig()
     ) {
         actorsToClasses =
             sessionType
@@ -40,10 +41,12 @@ class ActorModelMapping {
         // No two interfaces of different actors may intersect, otherwise we cant statically differentiate them for object values
         for ((actor1, interfaceTypes1) in actorsToInterfaceTypes) {
             for ((actor2, interfaceTypes2) in actorsToInterfaceTypes - actor1) {
-                val interfacesIntersection = (interfaceTypes1 intersect interfaceTypes2).filter { it.qualifiedName != "ABS.StdLib.Object" }
+                val interfacesIntersection = (interfaceTypes1 intersect interfaceTypes2).filter {
+                    it.qualifiedName != "ABS.StdLib.Object" &&
+                    it.qualifiedName !in verificationConfig.shareableInterfaces
+                }
 
                 if (interfacesIntersection.isNotEmpty()) {
-
                     throw ModelAnalysisException("""
                         |Classes implementing actors of a Session Type may not share interfaces or super interfaces except for ABS.StdLib.Object.
                         |

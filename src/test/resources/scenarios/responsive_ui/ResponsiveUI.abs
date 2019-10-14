@@ -1,0 +1,111 @@
+module GradingSystem;
+
+import * from SessionTypeABS.Tracing;
+
+data TState = Init | Expect;
+
+interface UI extends TraceableI {
+    Int resume(Int x);
+    Unit start(Int j);
+}
+
+interface II extends TraceableI {
+    Unit cmp(UI u, Int dat);
+}
+
+interface SI extends TraceableI {
+    Int cmp(Int i);
+}
+
+class S implements SI {
+    TraceStore traceStore = initialTraceStore(
+        "S",
+        map[Pair("cmp", 1)]
+    );
+
+    uses Traceable;
+
+    Int cmp(Int i) {
+        traceStore = traceInvocation(traceStore, "cmp", thisDestiny);
+
+        Int result = i;
+
+        traceStore = markMethodCompleted(traceStore, "cmp");
+
+        return result;
+    }
+}
+
+class I (SI s) implements II {
+    Fut<Int> cmpSTask;
+    Fut<Int> resumeTask;
+
+    TraceStore traceStore = initialTraceStore(
+        "I",
+        map[Pair("cmp", 1)]
+    );
+
+    uses Traceable;
+
+    Unit cmp(UI u, Int dat) {
+        traceStore = traceInvocation(traceStore, "cmp", thisDestiny);
+
+        cmpSTask = s!cmp(dat);
+        await cmpSTask?;
+        traceStore = traceReactivation(traceStore, "cmp", thisDestiny);
+
+        Int result = cmpSTask.get;
+
+        resumeTask = u!resume(result);
+
+        traceStore = markMethodCompleted(traceStore, "cmp");
+    }
+}
+
+class U (II i) implements UI {
+    TState intern = Init;
+
+    Fut<Unit> cmpITask;
+
+    TraceStore traceStore = initialTraceStore(
+        "U",
+        map[Pair("start", 1), Pair("resume", 1)]
+    );
+
+    uses Traceable;
+
+    Int resume(Int x) {
+        traceStore = traceInvocation(traceStore, "resume", thisDestiny);
+
+        Int result =
+            if (intern != Expect) then
+                -1
+            else
+                x;
+
+        traceStore = markMethodCompleted(traceStore, "resume");
+
+        return result;
+    }
+
+    Unit start(Int j) {
+        traceStore = traceInvocation(traceStore, "start", thisDestiny);
+
+        cmpITask = i!cmp(this, j);
+        intern = Expect;
+
+        traceStore = markMethodCompleted(traceStore, "start");
+    }
+}
+
+{
+    SI s = new S();
+    II i = new I(s);
+    UI u = new U(i);
+
+    await u!start(42);
+
+    await s!printTrace();
+    await i!printTrace();
+    await u!printTrace();
+}

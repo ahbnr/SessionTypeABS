@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
+import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
 
@@ -19,12 +20,13 @@ import org.abs_models.frontend.ast.*
  */
 fun enforceSessionTypesOnModel(
     model: Model,
-    classToType: Map<Class, CondensedType>
+    classToType: Map<Class, CondensedType>,
+    enforcementConfig: EnforcementConfig = EnforcementConfig()
 ): ModificationLog {
     val modLog = ModificationLog()
 
     for (m in model.moduleDecls) {
-        modLog.add(enforceSessionTypesOnModule(m, classToType))
+        modLog.add(enforceSessionTypesOnModule(m, classToType, enforcementConfig))
     }
 
     return modLog

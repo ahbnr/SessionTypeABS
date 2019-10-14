@@ -5,6 +5,7 @@ import de.ahbnr.sessiontypeabs.codegen.nothingC
 import de.ahbnr.sessiontypeabs.codegen.registerT
 import de.ahbnr.sessiontypeabs.codegen.schedulerAnnotation
 import de.ahbnr.sessiontypeabs.codegen.*
+import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Method
 import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
 
@@ -104,7 +105,11 @@ fun introduceRegisters(clazz: ClassDecl, automaton: SessionAutomaton) {
  * }
  * ```
  */
-fun introduceSchedulerAnnotation(clazz: ClassDecl, schedfun: String, automaton: SessionAutomaton) =
+fun introduceSchedulerAnnotation(
+    clazz: ClassDecl,
+    schedfun: String,
+    automaton: SessionAutomaton
+) =
     clazz.addAnnotation(
         schedulerAnnotation(
             schedfun,

@@ -67,6 +67,7 @@ data class CombinedDomain(
             participantsTracker = participantsTracker merge rhs.participantsTracker
         )
 
+    // FIXME: Apply to all subdomains!
     override fun closeScope(finalizedType: GlobalType) = this.copy()
 
     fun getSuspensionsOnFuture(f: Future) =

@@ -12,7 +12,7 @@ import de.ahbnr.sessiontypeabs.types.head
 import de.ahbnr.sessiontypeabs.types.intersperse
 import org.abs_models.frontend.ast.*
 
-fun checkMainBlock(mainBlock: MainBlock, sessionType: AnalyzedGlobalType<CombinedDomain>, actorModelMapping: ActorModelMapping) {
+fun checkMainBlock(mainBlock: MainBlock, sessionType: AnalyzedGlobalType<CombinedDomain>, actorModelMapping: ActorModelMapping, verificationConfig: VerificationConfig) {
     val headType = sessionType.type.head
 
     if (headType !is GlobalType.Initialization) {
@@ -72,13 +72,17 @@ ${
 
                 // No other call to a protocol participant is permitted, though all other usually communication relevant statements can be ignored, since the main block can
                 // not be typed.
-                val nonInitialCallToParticipant = callsToOthers.find { actorModelMapping.findActorByType(it.calleeNoTransform.type) != null }
-                if (nonInitialCallToParticipant != null) {
-                    throw ModelAnalysisException("""
-                            No other calls to participants of the Session Type are allowed.
-                            This is violated by call $nonInitialCallToParticipant in file ${nonInitialCallToParticipant.fileName} at column ${nonInitialCallToParticipant.startColumn} and line ${nonInitialCallToParticipant.startLine}.
-                        """.trimIndent().trimMargin()
-                    )
+                if (verificationConfig.strictMain) {
+                    val nonInitialCallToParticipant =
+                        callsToOthers.find { actorModelMapping.findActorByType(it.calleeNoTransform.type) != null }
+                    if (nonInitialCallToParticipant != null) {
+                        throw ModelAnalysisException(
+                            """
+                                No other calls to participants of the Session Type are allowed.
+                                This is violated by call $nonInitialCallToParticipant in file ${nonInitialCallToParticipant.fileName} at column ${nonInitialCallToParticipant.startColumn} and line ${nonInitialCallToParticipant.startLine}.
+                            """.trimIndent().trimMargin()
+                        )
+                    }
                 }
 
                 checkForNew(
