@@ -1,9 +1,9 @@
-package de.ahbnr.sessiontypeabs.types.analysis
+package de.ahbnr.sessiontypeabs.dynamicenforcement.automata
 
 import de.ahbnr.sessiontypeabs.types.Method
 import org.abs_models.frontend.ast.PureExp
 
-// data TransitionVerb = InvocREv String register | ReactEv ...
+// data TransitionVerb = Epsilon | InvocREv String register | ReactEv ...
 sealed class TransitionVerb {
     class InvocREv(
         val method: Method,
@@ -15,15 +15,17 @@ sealed class TransitionVerb {
         val method: Method,
         val register: Int
     ): TransitionVerb()
+
+    object Epsilon: TransitionVerb()
 }
 
-class Transition(
+data class Transition(
     val q1: Int,
     val verb: TransitionVerb,
     val q2: Int
 )
 
-class SessionAutomaton(
+data class SessionAutomaton(
     val Q: Set<Int>,
     val q0: Int,
     val Delta: Set<Transition>,
@@ -53,6 +55,7 @@ class SessionAutomaton(
                 when (t.verb) {
                     is TransitionVerb.InvocREv -> t.verb.method == method
                     is TransitionVerb.ReactEv -> t.verb.method == method
+                    is TransitionVerb.Epsilon -> false
                 }
             }
             .toSet()

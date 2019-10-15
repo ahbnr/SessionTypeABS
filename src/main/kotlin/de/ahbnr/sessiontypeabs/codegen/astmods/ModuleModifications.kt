@@ -5,7 +5,7 @@ import de.ahbnr.sessiontypeabs.codegen.schedulerLibModuleName
 import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
-import de.ahbnr.sessiontypeabs.types.analysis.genAutomaton
+import de.ahbnr.sessiontypeabs.dynamicenforcement.automata.genAutomaton
 
 import org.abs_models.frontend.ast.*
 

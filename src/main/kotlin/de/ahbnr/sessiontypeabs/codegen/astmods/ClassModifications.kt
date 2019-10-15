@@ -5,9 +5,8 @@ import de.ahbnr.sessiontypeabs.codegen.nothingC
 import de.ahbnr.sessiontypeabs.codegen.registerT
 import de.ahbnr.sessiontypeabs.codegen.schedulerAnnotation
 import de.ahbnr.sessiontypeabs.codegen.*
-import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Method
-import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
+import de.ahbnr.sessiontypeabs.dynamicenforcement.automata.SessionAutomaton
 
 import org.abs_models.frontend.ast.*
 

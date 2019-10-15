@@ -1,6 +1,5 @@
 package de.ahbnr.sessiontypeabs.codegen.astmods
 
-import de.ahbnr.sessiontypeabs.abstoolsmods.oneshotPrettyPrint
 import de.ahbnr.sessiontypeabs.codegen.analysis.ReactivationPoint
 import de.ahbnr.sessiontypeabs.codegen.analysis.findReactivationPoints
 import de.ahbnr.sessiontypeabs.codegen.*
@@ -8,9 +7,9 @@ import de.ahbnr.sessiontypeabs.codegen.analysis.findReturnStmt
 import de.ahbnr.sessiontypeabs.head
 import de.ahbnr.sessiontypeabs.tail
 import de.ahbnr.sessiontypeabs.types.Method
-import de.ahbnr.sessiontypeabs.types.analysis.SessionAutomaton
-import de.ahbnr.sessiontypeabs.types.analysis.Transition
-import de.ahbnr.sessiontypeabs.types.analysis.TransitionVerb
+import de.ahbnr.sessiontypeabs.dynamicenforcement.automata.SessionAutomaton
+import de.ahbnr.sessiontypeabs.dynamicenforcement.automata.Transition
+import de.ahbnr.sessiontypeabs.dynamicenforcement.automata.TransitionVerb
 
 import org.abs_models.frontend.ast.*
 

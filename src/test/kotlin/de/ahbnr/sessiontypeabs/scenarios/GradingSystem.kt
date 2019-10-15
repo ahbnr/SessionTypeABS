@@ -2,14 +2,12 @@ package de.ahbnr.sessiontypeabs.scenarios
 
 import de.ahbnr.sessiontypeabs.compiler.*
 import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
-import de.ahbnr.sessiontypeabs.generator.replicate
 import de.ahbnr.sessiontypeabs.tracing.*
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
 import de.ahbnr.sessiontypeabs.types.Method
 import de.ahbnr.sessiontypeabs.types.analysis.model.VerificationConfig
 import org.apache.commons.io.FileUtils
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import java.io.File
