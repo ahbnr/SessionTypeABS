@@ -1,0 +1,39 @@
+module Model;
+
+interface PI {
+  Unit mp();
+}
+
+class P (QI q) implements PI {
+  Fut<Unit> f1;
+  Fut<Unit> f2;
+
+  Unit mp() {
+    println("mp");
+
+    f1 = q!mq1();
+    f2 = q!mq2();
+  }
+}
+
+interface QI {
+  Unit mq1();
+  Unit mq2();
+}
+
+class Q implements QI {
+  Unit mq1() {
+    println("mq1");
+  }
+
+  Unit mq2() {
+    println("mq2");
+  }
+}
+
+{
+  QI q = new Q();
+  PI p = new P(q);
+
+  await p!mp();
+}

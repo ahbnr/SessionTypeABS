@@ -1,0 +1,44 @@
+module Model;
+
+interface PI {
+  Unit m();
+}
+
+class P (QI qRef) implements PI {
+  Fut<Unit> fa;
+  Fut<Unit> fb;
+
+  Unit m() {
+    println("m");
+
+    Int i = 0;
+    while (i < {{times}}) {
+      fa = qRef!a();
+      fb = qRef!b();
+
+      i = i + 1;
+    }
+  }
+}
+
+interface QI {
+  Unit a();
+  Unit b();
+}
+
+class Q implements QI {
+  Unit a() {
+    println("a");
+  }
+
+  Unit b() {
+    println("b");
+  }
+}
+
+{
+  QI q = new Q();
+  PI p = new P(q);
+
+  await p!m();
+}
