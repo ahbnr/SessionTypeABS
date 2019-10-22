@@ -57,9 +57,9 @@ fun introduceReactivationTransitions(methodImpl: MethodImpl, context: ClassDecl,
     // corresponding state transition ASTs
     val maybeTransitionStmts = automaton
         .transitionsForMethod(methodName)
-        .filter{t -> t.verb is TransitionVerb.ReactEv }
-        .map{t -> {elseCase: Stmt? -> genReactivationStateTransition(t, elseCase)} }
-        .foldRight(null as Stmt?, {next, acc -> next(acc)})
+        .filter{t -> t.verb is TransitionVerb.ReactEv } // only consider ReactEv transitions
+        .map{t -> {elseCase: Stmt? -> genReactivationStateTransition(t, elseCase)} } // map them to functions which compute the state transition statements, given an else case
+        .foldRight(null as Stmt?, {next, acc -> next(acc)}) // set the last else case to null and then apply these functions to each other in series, resulting in a big if-else statement
 
     if (maybeTransitionStmts != null) {
         // Since we may need to construct additional variables, we need a continuous
@@ -298,6 +298,10 @@ private fun genInvocREvTransitionSwitchCode(transitions: Set<Transition>) =
  * ```
  * if (q == 1 && Just(thisDestiny) == r0) {
  *   q = 2;
+ * }
+ *
+ * else {
+ *   [elseCase]
  * }
  * ```
  *

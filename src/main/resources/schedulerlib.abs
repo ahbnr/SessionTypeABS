@@ -4,11 +4,20 @@ import * from ABS.Scheduler;
 
 export Register, safeHead, blacklistMethods, whitelistMethods, selectAsideBlacklist, selectFromWhitelist, forceInit, applyProtocol, matchNamesOrRegisters;
 
+/* Utils */
 def Maybe<T> safeHead<T>(List<T> l) =
   case l {
     Cons(x, _) => Just(x);
     Nil => Nothing;
   };
+
+def Bool any<T>(f)(List<T> lst) =
+  case lst {
+    Cons(x, xs) => if f(x) then True else any(xs); // since ABS does not use lazy evaluation to my knowledge, this is probably more efficient than folding
+    Nil => False;
+  };
+
+/* End Utils */
 
 def Maybe<Process> forceInit(schedulerFun)(List<Process> queue) =
   case safeHead(filter((Process p) => method(p) == ".init")(queue)) {
@@ -36,10 +45,24 @@ def Maybe<Process> matchRegister(Register r, List<Process> queue) =
     _ => Nothing;
   };
 
-def Maybe<Process> matchNamesOrRegisters(Set<String> whitelist, Set<Register> registers, List<Process> queue) =
+/**
+ * Decides, whether the future of the given process is not stored in any of the given registers
+ */
+def Bool notStoredInRegister(Set<Register> allRegisters, Process p) =
+    !contains(allRegisters, Just(destiny(p)));
+
+def Bool isNewInvocation(Set<Register> allRegisters, Process p) = notStoredInRegister(allRegisters, p);
+
+/**
+ * Returns the first process of [queue] whose method is on the [whitelist] and a new invocation or whose future
+ * is stored in one of the given [registers].
+ *
+ * If none of the above cases apply, Nothing is returned.
+ */
+def Maybe<Process> matchNamesOrRegisters(Set<String> whitelist, Set<Register> registers, Set<Register> allRegisters, List<Process> queue) =
   safeHead(
     filter((Process p) =>
-         contains(whitelist, method(p))
+         (isNewInvocation(allRegisters, p) && contains(whitelist, method(p)))
       || contains(registers, Just(destiny(p)))) (queue)
   );
 

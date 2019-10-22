@@ -1,0 +1,91 @@
+module SamePrefixDifferentBranches;
+
+import * from SessionTypeABS.Tracing;
+
+interface PI extends TraceableI {
+    Unit m(Int branch);
+}
+
+interface QI extends TraceableI {
+    Unit m();
+}
+
+interface RI extends TraceableI {
+    Unit m();
+}
+
+class P (QI qref) implements PI {
+    TraceStore traceStore = initialTraceStore(
+        "P",
+        map[Pair("m", 1)]
+    );
+
+    Fut<Unit> fa;
+    Fut<Unit> fb;
+    Fut<Unit> fb2;
+
+    uses Traceable;
+
+    Unit m(Int branch) {
+        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+
+        case (branch) {
+            0 => {
+                this.fa = qref!m();
+            }
+
+            1 => {
+                this.fb = qref!m();
+            }
+        }
+
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+class Q (RI r) implements QI {
+    TraceStore traceStore = initialTraceStore(
+        "Q",
+        map[Pair("m", 1)]
+    );
+
+    Fut<Unit> fb2;
+
+    uses Traceable;
+
+    Unit m() {
+        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+
+        this.fb2 = r!m();
+        await this.fb2?;
+        traceStore = traceReactivation(traceStore, "m", thisDestiny);
+
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+class R implements RI {
+    TraceStore traceStore = initialTraceStore(
+        "R",
+        map[Pair("m", 1)]
+    );
+
+    uses Traceable;
+
+    Unit m() {
+        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+{
+    RI r = new R();
+    QI q = new Q(r);
+    PI p = new P(q);
+
+    await p!m(1);
+
+    await r!printTrace();
+    await q!printTrace();
+    await p!printTrace();
+}

@@ -77,7 +77,6 @@ private fun genAutomaton(t: CondensedType.InvocationRecv, c: Cache): SessionAuto
                 q1
             )
         ),
-        setOf(r0),
         setOf(q1)
     )
 }
@@ -103,7 +102,6 @@ private fun genAutomaton(t: CondensedType.Reactivation, c: Cache): SessionAutoma
                 q1
             )
         ),
-        setOf(r0),
         setOf(q1)
     )
 }
@@ -114,7 +112,6 @@ private fun genAutomaton(@Suppress("UNUSED_PARAMETER") t: CondensedType.Skip, c:
     return SessionAutomaton(
         setOf(q0),
         q0,
-        emptySet(),
         emptySet(),
         setOf(q0)
     )
@@ -141,7 +138,6 @@ private fun genAutomaton(t: CondensedType.Branching, c: Cache): SessionAutomaton
         return SessionAutomaton(
             setOf(q0),
             q0,
-            emptySet(),
             emptySet(),
             setOf(q0)
         )

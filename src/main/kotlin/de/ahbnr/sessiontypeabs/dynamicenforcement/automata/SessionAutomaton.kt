@@ -5,18 +5,26 @@ import org.abs_models.frontend.ast.PureExp
 
 // data TransitionVerb = Epsilon | InvocREv String register | ReactEv ...
 sealed class TransitionVerb {
-    class InvocREv(
+    data class InvocREv(
         val method: Method,
         val register: Int,
         val postCondition: PureExp? = null
-    ): TransitionVerb()
+    ): TransitionVerb() {
+        override fun getRegister() = register
+    }
 
-    class ReactEv(
+    data class ReactEv(
         val method: Method,
         val register: Int
-    ): TransitionVerb()
+    ): TransitionVerb() {
+        override fun getRegister() = register
+    }
 
-    object Epsilon: TransitionVerb()
+    object Epsilon: TransitionVerb() {
+        override fun getRegister() = null
+    }
+
+    abstract fun getRegister(): Int?
 }
 
 data class Transition(
@@ -29,9 +37,12 @@ data class SessionAutomaton(
     val Q: Set<Int>,
     val q0: Int,
     val Delta: Set<Transition>,
-    val registers: Set<Int>,
     val finalStates: Set<Int>
 ) {
+    val registers: Set<Int> by lazy {
+        Delta.mapNotNull { it.verb.getRegister() }.toSet()
+    }
+
     fun transitionsOfState(state: Int) =
         Delta
             .filter{t -> t.q1 == state}

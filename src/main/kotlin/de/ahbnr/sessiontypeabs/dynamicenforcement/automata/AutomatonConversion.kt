@@ -61,7 +61,6 @@ private fun metaAutomatonToSessionAutomaton(
         Q = QMeta.map { stateMapping[it]!! }.toSet(),
         q0 = stateMapping[q0Meta]!!,
         Delta = Delta,
-        registers = originalAutomaton.registers,
         finalStates = FMeta.map { stateMapping[it]!! }.toSet()
     )
 }
@@ -107,3 +106,32 @@ private fun groupedTransitions(qMeta: Set<Int>, automaton: SessionAutomaton): Se
             )
         }
         .toSet()
+
+/**
+ * Does not work correctly if there are epsilon transitions
+ */
+fun mergeInvocREv(automaton: SessionAutomaton): SessionAutomaton {
+    val regsToNewReg = automaton.Delta
+        .filter { it.verb is TransitionVerb.InvocREv && it.verb.postCondition == null }
+        .groupBy { Pair(it.q1, (it.verb as TransitionVerb.InvocREv).method) }
+        .map { (_, sameInvocs) -> sameInvocs.map { (it.verb as TransitionVerb.InvocREv).register } }
+        .associateWith { it.first() }
+        .entries
+
+    fun mergeReg(r: Int) = regsToNewReg.find {
+            (mergedRegs, newReg) -> r in mergedRegs
+    }
+        ?.value
+        ?: r
+
+    return automaton.copy(
+        Delta = automaton.Delta.map { it.copy(
+            verb = when (it.verb) {
+                is TransitionVerb.InvocREv -> it.verb.copy(register = mergeReg(it.verb.register))
+                is TransitionVerb.ReactEv -> it.verb.copy(register = mergeReg(it.verb.register))
+                is TransitionVerb.Epsilon -> it.verb
+            }
+        )
+        }.toSet()
+    )
+}

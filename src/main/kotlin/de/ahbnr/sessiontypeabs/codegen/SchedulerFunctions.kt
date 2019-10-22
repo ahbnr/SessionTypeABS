@@ -115,6 +115,6 @@ private fun matchNamesOrRegistersForState(state: Int, automaton: SessionAutomato
         }
     }
 
-    return matchNamesOrRegisters(methodNames.map{it.value}.toSet(), registers)
+    return matchNamesOrRegisters(methodNames.map{it.value}.toSet(), registers, automaton.registers)
 }
 

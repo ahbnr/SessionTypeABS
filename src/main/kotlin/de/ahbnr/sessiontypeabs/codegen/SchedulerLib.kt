@@ -46,21 +46,16 @@ fun registerParameters(automaton: SessionAutomaton) =
         }
         .toTypedArray()
 
-fun processParameter() =
-    ParamDecl(
-        "p",
-        processT(),
-        List() // Annotations
-    )
 
 // Functions
 
-fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>) =
+fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>, allRegisters: Set<Int>) =
     FnApp(
         "$schedulerLibModuleName.matchNamesOrRegisters",
         List(
             setC(*whitelist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
             setC(*registers.map { register -> VarUse(registerIdentifier(register)) }.toTypedArray()),
+            setC(*allRegisters.map { register -> VarUse(registerIdentifier(register)) }.toTypedArray()),
             VarUse(schedulerFunQueueParamIdentifier)
         )
     )
@@ -71,20 +66,4 @@ fun applyProtocol(protocol: ParFnAppParam, whitelist: Set<String>, queue: PureEx
         protocol,
         setC(*whitelist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
         queue
-    )
-
-fun forceInit(schedulerFun: ParFnAppParam, queue: PureExp) =
-    callHigherOrderFun(
-        "$schedulerLibModuleName.forceInit",
-        schedulerFun,
-        queue
-    )
-
-fun selectAsideBlacklist(blacklist: Set<String>, queue: PureExp) =
-    FnApp(
-        "$schedulerLibModuleName.selectAsideBlacklist",
-        List(
-            setC(*blacklist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
-            queue
-        )
     )

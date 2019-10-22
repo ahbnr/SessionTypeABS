@@ -1,5 +1,7 @@
 package de.ahbnr.sessiontypeabs.dynamicenforcement.automata
 
+import de.ahbnr.sessiontypeabs.head
+
 /**
  * Concatenates automata at given "glue" states by inserting an ε-Transition between the glue states
  * and the initial state of the second automaton.
@@ -25,12 +27,12 @@ fun concatAutomata(a0: SessionAutomaton, a1: SessionAutomaton, glueStates: Set<I
                 q2 = a1.q0
             )
         }
+        .toSet()
 
     return SessionAutomaton(
         Q = a0.Q union a1.Q, // Q1 ∪ Q2
         q0 = a0.q0,
-        Delta = a0.Delta union a1.Delta + epsilonTransitions,
-        registers = a0.registers union a1.registers,
+        Delta = a0.Delta union a1.Delta union  epsilonTransitions,
         finalStates = finalStates
     )
 }
@@ -53,7 +55,6 @@ fun repeatAutomaton(a: SessionAutomaton): SessionAutomaton {
         a.q0,
         a.Delta // Δ ∪ {(qf, ε, q0) | qf ∈ F1 }
             union additionalBackTransitions,
-        a.registers,
         a.finalStates
     )
 }
@@ -65,3 +66,4 @@ infix fun SessionAutomaton.union(rhs: SessionAutomaton) =
         glueStates = setOf(this.q0),
         finalStates = this.finalStates union rhs.finalStates
     )
+

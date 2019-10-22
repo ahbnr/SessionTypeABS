@@ -1,0 +1,65 @@
+module SamePrefixDifferentBranches;
+
+import * from SessionTypeABS.Tracing;
+
+interface PI extends TraceableI {
+    Unit m(Int branch);
+}
+
+interface QI extends TraceableI {
+    Unit m();
+}
+
+class P (QI qref) implements PI {
+    TraceStore traceStore = initialTraceStore(
+        "P",
+        map[Pair("m", 1)]
+    );
+
+    Fut<Unit> fa;
+    Fut<Unit> fb;
+    Fut<Unit> fb2;
+
+    uses Traceable;
+
+    Unit m(Int branch) {
+        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+
+        case (branch) {
+            0 => {
+                this.fa = qref!m();
+            }
+
+            1 => {
+                this.fb = qref!m();
+                this.fb2 = qref!m();
+            }
+        }
+
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+class Q implements QI {
+    TraceStore traceStore = initialTraceStore(
+        "Q",
+        map[Pair("m", 2)]
+    );
+
+    uses Traceable;
+
+    Unit m() {
+        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+{
+    QI q = new Q();
+    PI p = new P(q);
+
+    await p!m(1);
+
+    await q!printTrace();
+    await p!printTrace();
+}

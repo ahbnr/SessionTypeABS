@@ -18,7 +18,6 @@ class Conversion {
                 Transition(1, TransitionVerb.InvocREv(Method("m2"), 1), 2),
                 Transition(2, TransitionVerb.InvocREv(Method("m3"), 2), 1)
             ),
-            registers = setOf(0, 1, 2),
             finalStates = setOf(2)
         )
 
@@ -189,7 +188,6 @@ class Conversion {
                 Delta = setOf(
                     transition
                 ),
-                registers = setOf(id),
                 finalStates = setOf(id + 1)
             )
         )

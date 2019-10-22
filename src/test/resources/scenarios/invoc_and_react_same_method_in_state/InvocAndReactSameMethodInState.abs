@@ -1,0 +1,60 @@
+module InvocAndReactSameMethodInState;
+
+// Unfinished
+
+import * from SessionTypeABS.Tracing;
+
+interface PI extends TraceableI {
+    Unit m(Int branch);
+}
+
+interface QI extends TraceableI {
+    Unit ma();
+    Unit mb();
+}
+
+class P (QI q) implements P {
+    TraceStore traceStore = initialTraceStore(
+        "P",
+        map[Pair("m", 1)]
+    );
+
+    Fut<Unit> fa;
+    Fut<Unit> fb;
+
+    Unit m(Int branch) {
+        traceStore = traceInvocation(traceStore, "branch", thisDestiny);
+
+        case (branch) {
+            0 => {
+                this.fa = q!ma();
+                await this.fa?;
+
+                traceStore = traceReactivation(traceStore, "m", thisDestiny);
+            }
+
+            1 => {
+                this.fb = q!mb();
+                await this.fb?;
+
+                traceStore = traceReactivation(traceStore, "m", thisDestiny);
+            }
+
+            2 => skip
+        }
+
+        traceStore = markMethodCompleted(traceStore, "m");
+    }
+}
+
+{
+    P p = new ServiceDesk();
+    StudentI s = new Student(d);
+    ComputationServerI c = new ComputationServer(d, s);
+
+    await c!compute();
+
+    await d!printTrace();
+    await s!printTrace();
+    await c!printTrace();
+}
