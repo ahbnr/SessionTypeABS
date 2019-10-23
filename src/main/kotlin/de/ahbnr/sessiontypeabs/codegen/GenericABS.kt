@@ -143,3 +143,8 @@ fun ifThenElse(condition: PureExp, then: Stmt, maybeElse: Stmt? = null) =
         }
     )
 
+fun unitT() =
+    DataTypeUse(
+        "ABS.StdLib.Unit",
+        List() //Annotations
+    )

@@ -40,15 +40,8 @@ fun schedulerAnnotation(schedfun: String, vararg params: String) =
  *      (set["m1", m2"], queue)
  * ```
  */
-fun scheduler(name: String, automaton: SessionAutomaton, enforcementConfig: EnforcementConfig = EnforcementConfig()) =
-    funDecl(
-        maybeT(processT()),
-        name,
-        List(
-            queueParameter(),
-            stateParameter(),
-            *registerParameters(automaton)
-        ),
+fun scheduler(classDecl: ClassDecl, name: String, automaton: SessionAutomaton, enforcementConfig: EnforcementConfig = EnforcementConfig()): FunctionDecl {
+    val applyProtocolNode =
         applyProtocol(
             lambdaDecl(
                 List(queueParameter()),
@@ -57,7 +50,60 @@ fun scheduler(name: String, automaton: SessionAutomaton, enforcementConfig: Enfo
             enforcementConfig.whitelistedMethods.map(Method::value).toSet(),
             VarUse(schedulerFunQueueParamIdentifier)
         )
+
+    val logModDelays =
+        if (classDecl.qualifiedName in enforcementConfig.logActivationDelay) {
+            LetExp(
+                ParamDecl("schedulerResult", maybeT(processT()), List()),
+                applyProtocolNode,
+                purePrintLn(
+                    CaseExp(
+                        VarUse("schedulerResult"),
+                        List(
+                            CaseBranch(
+                                ConstructorPattern("Nothing", List()),
+                                StringLiteral("[SessionTypeABS] Scheduler of class ${classDecl.qualifiedName} could not find a viable activation.")
+                            ),
+                            CaseBranch(
+                                UnderscorePattern(),
+                                StringLiteral("")
+                            )
+                        )
+                    ),
+                    VarUse("schedulerResult"),
+                    0
+                )
+            )
+        }
+
+        else {
+            applyProtocolNode
+        }
+
+    val logModSchedulerCalls =
+        if (classDecl.qualifiedName in enforcementConfig.logSchedulerCalls) {
+            purePrintLn(
+                StringLiteral("[SessionTypeABS] Scheduler of class ${classDecl.qualifiedName} has been called."),
+                logModDelays,
+                1
+            )
+        }
+
+        else {
+            logModDelays
+        }
+
+    return funDecl(
+        maybeT(processT()),
+        name,
+        List(
+            queueParameter(),
+            stateParameter(),
+            *registerParameters(automaton)
+        ),
+        logModSchedulerCalls
     )
+}
 
 /**
  * Generates an case-of AST node, which selects the next method to schedule depending on the current state, such

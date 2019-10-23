@@ -40,7 +40,7 @@ fun enforceSessionTypesOnModule(
             val automaton = genAutomaton(type)
 
             val schedulerName = "sched" + schedulerNameCounter++
-            val scheduler = scheduler(schedulerName, automaton, enforcementConfig)
+            val scheduler = scheduler(decl, schedulerName, automaton, enforcementConfig)
 
             m.addDecl(scheduler)
             modLog.createdSchedulers.add(scheduler)

@@ -4,6 +4,7 @@ plugins {
     id 'application'
     id 'antlr'
     id "com.github.johnrengelman.shadow" version "4.0.4"
+    id "org.jetbrains.kotlin.kapt" version "1.3.50"
 }
 
 group 'de.ahbnr'
@@ -35,6 +36,7 @@ dependencies {
     implementation files('../abstools/frontend/dist/absfrontend.jar')
 
     implementation 'info.picocli:picocli:4.0.0-beta-2'
+    kapt 'info.picocli:picocli-codegen:4.0.0-beta-2'
 
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 
@@ -42,6 +44,12 @@ dependencies {
 
     // set antlr version
     antlr "org.antlr:antlr4:4.7"
+}
+
+kapt {
+    arguments {
+        arg("project", "${project.group}/${project.name}")
+    }
 }
 
 compileKotlin {

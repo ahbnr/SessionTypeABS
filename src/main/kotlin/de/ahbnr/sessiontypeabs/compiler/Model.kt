@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.compiler
 
+import de.ahbnr.sessiontypeabs.abstoolsmods.oneshotPrettyPrint
 import de.ahbnr.sessiontypeabs.codegen.analysis.findChildren
 import de.ahbnr.sessiontypeabs.codegen.astmods.ModificationLog
 import de.ahbnr.sessiontypeabs.codegen.astmods.enforceSessionTypesOnModel
@@ -155,5 +156,16 @@ fun handleModelErrors(model: Model) {
 /**
  * Compiles ABS model to Erlang
  */
-fun modelToErlang(model: Model) =
-    ErlangBackend().compile(model, File("gen/erl/"), EnumSet.of(ErlangBackend.CompileOptions.VERBOSE))//EnumSet.noneOf(ErlangBackend.CompileOptions::class.java))
+fun modelToErlang(model: Model, compilerConfig: CompilerConfig = CompilerConfig()) =
+    ErlangBackend()
+        .compile(
+            model,
+            File("gen/erl/"),
+            if (compilerConfig.verboseErlangCompilation) {
+                EnumSet.of(ErlangBackend.CompileOptions.VERBOSE)
+            }
+
+            else {
+                EnumSet.noneOf(ErlangBackend.CompileOptions::class.java)
+            }
+        )

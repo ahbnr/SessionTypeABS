@@ -17,6 +17,9 @@ class PrintModel : Runnable {
     @Parameters(paramLabel="FILES", arity="1..*")
     private val files: Array<String> = emptyArray()
 
+    @Option(names = ["--logActivationDelay"])
+    private val logActivationDelay: Array<String> = emptyArray()
+
     override fun run() {
         try {
             val absSourceFiles = files.filter {
@@ -29,7 +32,12 @@ class PrintModel : Runnable {
 
             val model = parseModel(absSourceFiles)
             val typeBuild = buildTypes(typeSourceFiles, model)
-            val modelBuild = buildModel(model, typeBuild, VerificationConfig(noChecks = true))
+            val modelBuild = buildModel(
+                model,
+                typeBuild,
+                VerificationConfig(noChecks = true),
+                EnforcementConfig(logActivationDelay = logActivationDelay.toSet())
+            )
 
             val printer = PrintWriter(System.out)
             val formatter = DefaultABSFormatter(printer)

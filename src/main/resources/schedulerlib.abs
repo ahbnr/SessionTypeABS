@@ -2,7 +2,7 @@ module SessionTypeABS.SchedulerHelpers;
 
 import * from ABS.Scheduler;
 
-export Register, safeHead, blacklistMethods, whitelistMethods, selectAsideBlacklist, selectFromWhitelist, forceInit, applyProtocol, matchNamesOrRegisters;
+export Register, safeHead, blacklistMethods, whitelistMethods, selectAsideBlacklist, selectFromWhitelist, forceInit, applyProtocol, matchNamesOrRegisters, orElseMaybe;
 
 /* Utils */
 def Maybe<T> safeHead<T>(List<T> l) =
@@ -16,6 +16,12 @@ def Bool any<T>(f)(List<T> lst) =
     Cons(x, xs) => if f(x) then True else any(xs); // since ABS does not use lazy evaluation to my knowledge, this is probably more efficient than folding
     Nil => False;
   };
+
+def Maybe<T> orElseMaybe<T>(Maybe<T> maybeValue, Maybe<T> elseValue) =
+    case maybeValue {
+        Nothing => elseValue;
+        _ => maybeValue;
+    };
 
 /* End Utils */
 

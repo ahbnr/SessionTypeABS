@@ -11,7 +11,8 @@ fun compile(
     absSourceFileNames: Iterable<String>,
     typeSourceFileNames: Iterable<String>,
     verificationConfig: VerificationConfig = VerificationConfig(),
-    enforcementConfig: EnforcementConfig = EnforcementConfig()
+    enforcementConfig: EnforcementConfig = EnforcementConfig(),
+    compilerConfig: CompilerConfig = CompilerConfig()
 ): ModelBuild {
     val model = parseModel(absSourceFileNames)
 

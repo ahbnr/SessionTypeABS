@@ -49,6 +49,15 @@ fun registerParameters(automaton: SessionAutomaton) =
 
 // Functions
 
+fun orElseMaybe(maybeValue: PureExp, elseValue: PureExp) =
+    FnApp(
+        "$schedulerLibModuleName.orElseMaybe",
+        List(
+            maybeValue,
+            elseValue
+        )
+    )
+
 fun matchNamesOrRegisters(whitelist: Set<String>, registers: Set<Int>, allRegisters: Set<Int>) =
     FnApp(
         "$schedulerLibModuleName.matchNamesOrRegisters",
@@ -66,4 +75,13 @@ fun applyProtocol(protocol: ParFnAppParam, whitelist: Set<String>, queue: PureEx
         protocol,
         setC(*whitelist.map { methodName -> StringLiteral(methodName) }.toTypedArray()),
         queue
+    )
+
+// Other stuff
+
+fun purePrintLn(output: PureExp, returnExp: PureExp, uniqueId: Int = 0) =
+    LetExp( // Hack to call println in pure expression
+        ParamDecl("printRet$uniqueId", unitT(), List()),
+        callFun("println", output),
+        returnExp
     )
