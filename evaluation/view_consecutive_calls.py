@@ -25,7 +25,7 @@ def extractInvocations(stdout: str) -> Sequence[Invocation]:
             invocation_regex.findall(stdout)
         ))
 
-def expectedInvocations(num_iterations: int, num_methods: int):
+def expectedSequentialInvocations(num_iterations: int, num_methods: int):
     return sum(
         map(
             lambda iteration_idx: sum(
@@ -40,8 +40,20 @@ def expectedInvocations(num_iterations: int, num_methods: int):
         []
     )
 
+def stripParametersFromInvocations(invocations: Sequence[Tuple[str, int]]) -> Sequence[str]:
+    def helper(invocation):
+        method_name, parameter = invocation
+        return method_name
+
+    return list(map(
+            helper,
+            invocations
+        ))
+
 index_file = open(os.path.join(cache_dir, 'index'), 'rb')
 run_configs = pickle.load(index_file)
+
+to_files = True
 
 for run_config in run_configs:
     print('Viewing {}'.format(run_config['name']))
@@ -51,6 +63,14 @@ for run_config in run_configs:
     user_times_frame = data_frame.applymap(
             lambda x: x['user']
         )
+    user_times_frame.index.name = 'repetitions'
+    user_times_fig = {
+            'name': 'UserTimes',
+            'frame': user_times_frame,
+            'ylabel': 'user mode execution time [s]',
+            'xlabel': 'repetitions'
+        }
+
     delta_user_times_frame = pd.DataFrame(
             data=data_frame.apply(
                 lambda x: (x['enforcement']['user'] - x['plain']['user']) / x['plain']['user'],
@@ -58,12 +78,29 @@ for run_config in run_configs:
             ),
             columns=['relative increase']
         )
+    delta_user_times_frame.index.name = 'repetitions'
+    delta_user_times_fig = {
+            'name': 'DeltaUserTimes',
+            'frame': delta_user_times_frame,
+            'ylabel': 'relative increase [%]',
+            'xlabel': 'repetitions'
+        }
+
     real_times_frame = data_frame.applymap(
             lambda x: x['real']
         )
+
     memory_frame = data_frame.applymap(
             lambda x: x['maximum_rss']
         )
+    memory_frame.index.name = 'repetitions'
+    memory_fig = {
+            'name': 'Memory',
+            'frame': memory_frame,
+            'ylabel': 'maximum memory resident set size [KB]',
+            'xlabel': 'repetitions'
+        }
+
     delta_memory_frame = pd.DataFrame(
             data=data_frame.apply(
                 lambda x: (x['enforcement']['maximum_rss'] - x['plain']['maximum_rss']) / x['plain']['maximum_rss'],
@@ -71,7 +108,13 @@ for run_config in run_configs:
             ),
             columns=['relative increase']
         )
-
+    delta_memory_frame.index.name = 'repetitions'
+    delta_memory_fig = {
+            'name': 'DeltaMemory',
+            'frame': delta_memory_frame,
+            'ylabel': 'relative increase [%]',
+            'xlabel': 'repetitions'
+        }
 
     scheduler_log_frame = pd.DataFrame(
         data=data_frame.apply(
@@ -81,18 +124,77 @@ for run_config in run_configs:
                     ],
                 axis='columns'
             ).array,
-        columns=['delays', 'scheduling events'],
+        columns=['delays', 'calls of scheduler'],
         index=data_frame.index
     )
+    delta_memory_fig = {
+            'name': 'SchedulerLog',
+            'frame': scheduler_log_frame,
+            'ylabel': '',
+            'xlabel': 'repetitions'
+        }
 
-    #data_frame = data_frame.drop([100,300,500])
+    data_frame = data_frame.drop([100,300,500])
+    #levenshtein_sequential_frame = data_frame.applymap(
+    #        lambda x: {
+    #            'levenshtein': mean(
+    #                map(
+    #                    lambda actualInvocations: edit_distance(
+    #                            expectedSequentialInvocations(num_iterations=x['times'],num_methods=run_config['num_methods']),
+    #                            actualInvocations
+    #                        ),
+    #                    map(
+    #                        extractInvocations,
+    #                        x['stdouts']
+    #                    )
+    #                )
+    #            ),
+    #            'length': x['times'] * run_config['num_methods']
+    #        }
+    #    )
+    #levenshtein_sequential_comparison_frame = pd.DataFrame(
+    #    data=levenshtein_sequential_frame.apply(
+    #            lambda row: [
+    #                    row['plain']['levenshtein'],
+    #                    row['enforcement']['levenshtein'],
+    #                    row['plain']['length']
+    #                ],
+    #            axis=1
+    #        ).array,
+    #    columns=['plain', 'enforcement', 'length'],
+    #    index=data_frame.index
+    #)
+
+    #levenshtein_sequential_delta_comparison_frame = pd.DataFrame(
+    #    data=levenshtein_sequential_frame.apply(
+    #            lambda row: row['plain']['levenshtein'] / row['plain']['length'],
+    #            axis=1
+    #        ).array,
+    #    columns=['relative edits'],
+    #    index=data_frame.index
+    #)
+
     levenshtein_frame = data_frame.applymap(
             lambda x: {
-                'levenshtein': mean(
+                'levenshtein_sequential': mean(
                     map(
                         lambda actualInvocations: edit_distance(
-                                expectedInvocations(num_iterations=x['times'],num_methods=run_config['num_methods']),
+                                expectedSequentialInvocations(num_iterations=x['times'],num_methods=run_config['num_methods']),
                                 actualInvocations
+                            ),
+                        map(
+                            extractInvocations,
+                            x['stdouts']
+                        )
+                    )
+                ),
+                'levenshtein_alternating': mean(
+                    map(
+                        lambda actualInvocations: edit_distance(
+                                stripParametersFromInvocations(
+                                    expectedSequentialInvocations(num_iterations=x['times'],num_methods=run_config['num_methods'])
+                                ),
+                                stripParametersFromInvocations(actualInvocations)
                             ),
                         map(
                             extractInvocations,
@@ -106,28 +208,83 @@ for run_config in run_configs:
     levenshtein_comparison_frame = pd.DataFrame(
         data=levenshtein_frame.apply(
                 lambda row: [
-                        row['plain']['levenshtein'],
-                        row['enforcement']['levenshtein'],
+                        row['plain']['levenshtein_sequential'],
+                        row['plain']['levenshtein_alternating'],
+                        row['enforcement']['levenshtein_sequential'],
+                        row['enforcement']['levenshtein_alternating'],
                         row['plain']['length']
                     ],
                 axis=1
             ).array,
-        columns=['plain', 'enforcement', 'length'],
+        columns=['plain sequential', 'plain alternating', 'enforcement sequential', 'enforcement alternating', 'sequence length'],
         index=data_frame.index
     )
 
     levenshtein_delta_comparison_frame = pd.DataFrame(
         data=levenshtein_frame.apply(
-                lambda row: row['plain']['levenshtein'] / row['plain']['length'],
+                lambda row: row['plain']['levenshtein_alternating'] / row['plain']['length'],
                 axis=1
             ).array,
-        columns=['relative edits'],
+        columns=['edits / sequence length'],
         index=data_frame.index
     )
 
-    frames = [levenshtein_comparison_frame,scheduler_log_frame]#[user_times_frame, real_times_frame, delta_user_times_frame, memory_frame, delta_memory_frame, levenshtein_comparison_frame]
-    for frame in frames:
-        frame.plot.bar()
-        plt.show()
+    def levenshtein_adjustment(frame):
+        adjusted_frame = pd.DataFrame(
+                data = frame.apply(
+                    lambda row: [
+                            row['plain sequential'],
+                            row['plain alternating'],
+                            row['sequence length']
+                        ],
+                    axis='columns'
+                ).array,
+                columns=['sequential', 'alternating', 'sequence length'],
+                index=data_frame.index
+            )
+        adjusted_frame.index.name = 'repetitions'
+        return adjusted_frame
+
+    levenshtein_comparison_fig = {
+            'name': 'Levenshtein',
+            'frame': levenshtein_comparison_frame,
+            'ylabel': 'edits',
+            'xlabel': 'repetitions',
+            'adjustment': levenshtein_adjustment,
+            'customplot': lambda frame: frame.plot.bar(stacked=True)
+        }
+
+    levenshtein_delta_fig = {
+            'name': 'DeltaLevenshtein',
+            'frame': levenshtein_delta_comparison_frame,
+            'ylabel': 'edits / sequence length',
+            'xlabel': 'repetitions',
+        }
+
+    figures = [delta_memory_fig]#[levenshtein_comparison_fig, levenshtein_delta_fig]#[user_times_fig, delta_user_times_fig, memory_fig, delta_memory_fig]
+    for fig in figures:
+        print('Viewing figure {}'.format(fig['name']))
+
+        if to_files:
+            fig['frame'].to_csv(os.path.join(cache_dir, '{}_{}.csv'.format(run_config['name'], fig['name'])))
+
+        if 'adjustment' in fig:
+            fig['frame'] = fig['adjustment'](fig['frame'])
+
+        ax = None
+        if 'customplot' in fig:
+            ax = fig['customplot'](fig['frame'])
+        else:
+            ax = fig['frame'].plot.bar()
+
+        ax.set_ylabel(fig['ylabel'])
+        ax.set_xlabel(fig['xlabel'])
+        ax.autoscale()
+
+        if to_files:
+            plt.savefig(os.path.join(cache_dir, '{}_{}.pdf'.format(run_config['name'], fig['name'])))
+        else:
+            plt.show()
+
     input()
 

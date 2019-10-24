@@ -23,28 +23,12 @@ class P (QI qRef, IndirectionI indirection) implements PI {
   
   Fut<Unit> fm1;
   
-  Fut<Unit> fm2;
-  
-  Fut<Unit> fm3;
-  
-  Fut<Unit> fm4;
-  
-  Fut<Unit> fm5;
-  
-  Fut<Unit> fm6;
-  
-  Fut<Unit> fm7;
-  
-  Fut<Unit> fm8;
-  
-  Fut<Unit> fm9;
-  
 
   Unit m() {
     println("m");
 
     Int i = 0;
-    while (i < 50) {
+    while (i < 500) {
       
       
       fm0 = qRef!m0(i);
@@ -54,63 +38,7 @@ class P (QI qRef, IndirectionI indirection) implements PI {
       
       
       
-      fm1 = indirection!m1(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm2 = qRef!m2(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm3 = indirection!m3(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm4 = qRef!m4(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm5 = indirection!m5(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm6 = qRef!m6(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm7 = indirection!m7(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm8 = qRef!m8(i);
-      
-      
-      busywait(20);
-      
-      
-      
-      fm9 = indirection!m9(i);
+      fm1 = qRef!m1(i);
       
       
       busywait(20);
@@ -127,32 +55,6 @@ interface IndirectionI {
   
   
   
-  Unit m1(Int i);
-  
-  
-  
-  
-  
-  Unit m3(Int i);
-  
-  
-  
-  
-  
-  Unit m5(Int i);
-  
-  
-  
-  
-  
-  Unit m7(Int i);
-  
-  
-  
-  
-  
-  Unit m9(Int i);
-  
   
 }
 
@@ -161,73 +63,11 @@ class Indirection (QI qRef) implements IndirectionI {
   
   
   
-  Fut<Unit> fIm1;
-  
-  
-  
-  
-  
-  Fut<Unit> fIm3;
-  
-  
-  
-  
-  
-  Fut<Unit> fIm5;
-  
-  
-  
-  
-  
-  Fut<Unit> fIm7;
-  
-  
-  
-  
-  
-  Fut<Unit> fIm9;
-  
   
 
   
   
   
-  
-  Unit m1(Int i) {
-    fIm1 = qRef!m1(i);
-  }
-  
-  
-  
-  
-  
-  Unit m3(Int i) {
-    fIm3 = qRef!m3(i);
-  }
-  
-  
-  
-  
-  
-  Unit m5(Int i) {
-    fIm5 = qRef!m5(i);
-  }
-  
-  
-  
-  
-  
-  Unit m7(Int i) {
-    fIm7 = qRef!m7(i);
-  }
-  
-  
-  
-  
-  
-  Unit m9(Int i) {
-    fIm9 = qRef!m9(i);
-  }
   
   
 }
@@ -237,22 +77,6 @@ interface QI {
   Unit m0(Int i);
   
   Unit m1(Int i);
-  
-  Unit m2(Int i);
-  
-  Unit m3(Int i);
-  
-  Unit m4(Int i);
-  
-  Unit m5(Int i);
-  
-  Unit m6(Int i);
-  
-  Unit m7(Int i);
-  
-  Unit m8(Int i);
-  
-  Unit m9(Int i);
   
 }
 
@@ -264,38 +88,6 @@ class Q implements QI {
   
   Unit m1(Int i) {
     println("m1(" + toString(i) + ")");
-  }
-  
-  Unit m2(Int i) {
-    println("m2(" + toString(i) + ")");
-  }
-  
-  Unit m3(Int i) {
-    println("m3(" + toString(i) + ")");
-  }
-  
-  Unit m4(Int i) {
-    println("m4(" + toString(i) + ")");
-  }
-  
-  Unit m5(Int i) {
-    println("m5(" + toString(i) + ")");
-  }
-  
-  Unit m6(Int i) {
-    println("m6(" + toString(i) + ")");
-  }
-  
-  Unit m7(Int i) {
-    println("m7(" + toString(i) + ")");
-  }
-  
-  Unit m8(Int i) {
-    println("m8(" + toString(i) + ")");
-  }
-  
-  Unit m9(Int i) {
-    println("m9(" + toString(i) + ")");
   }
   
 }

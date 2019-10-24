@@ -45,25 +45,31 @@ run_configs = [
             'num_methods': 2,
             'use_indirection': False,
             'shuffle_methods': False,
-        },
-        {
-            'name': 'Method10DirectNoShuffle',
-            'num_methods': 10,
-            'use_indirection': False,
-            'shuffle_methods': False,
-        },
-        {
-            'name': 'Method2IndirectNoShuffle',
-            'num_methods': 2,
-            'use_indirection': True,
-            'shuffle_methods': False,
-        },
-        {
-            'name': 'Method10IndirectNoShuffle',
-            'num_methods': 10,
-            'use_indirection': True,
-            'shuffle_methods': False,
         }
+        #{
+        #    'name': 'Method2DirectNoShuffle',
+        #    'num_methods': 2,
+        #    'use_indirection': False,
+        #    'shuffle_methods': False,
+        #},
+        #{
+        #    'name': 'Method10DirectNoShuffle',
+        #    'num_methods': 10,
+        #    'use_indirection': False,
+        #    'shuffle_methods': False,
+        #},
+        #{
+        #    'name': 'Method2IndirectNoShuffle',
+        #    'num_methods': 2,
+        #    'use_indirection': True,
+        #    'shuffle_methods': False,
+        #},
+        #{
+        #    'name': 'Method10IndirectNoShuffle',
+        #    'num_methods': 10,
+        #    'use_indirection': True,
+        #    'shuffle_methods': False,
+        #},
         #{
         #    'name': 'Method2DirectShuffle',
         #    'num_methods': 2,
