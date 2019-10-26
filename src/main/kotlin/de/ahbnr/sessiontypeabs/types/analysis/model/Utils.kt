@@ -25,6 +25,7 @@ fun <T> isCommunicationInert(
    when (node) {
         is SkipStmt,
         is AssertStmt,
+        is DurationStmt,
         is PureExp -> true
         is Block ->
             node.stmtsNoTransform.all { isCommunicationInert(it, environment) }

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#exec(open('./CBcm.py').read())
 import pickle
 import os
 import re
@@ -8,6 +9,7 @@ from statistics import mean
 from nltk import edit_distance
 from typing import Sequence, NewType, Tuple
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 from common_consecutive_calls import *
 
@@ -53,7 +55,7 @@ def stripParametersFromInvocations(invocations: Sequence[Tuple[str, int]]) -> Se
 index_file = open(os.path.join(cache_dir, 'index'), 'rb')
 run_configs = pickle.load(index_file)
 
-to_files = True
+to_files = False
 
 for run_config in run_configs:
     print('Viewing {}'.format(run_config['name']))
@@ -127,7 +129,7 @@ for run_config in run_configs:
         columns=['delays', 'calls of scheduler'],
         index=data_frame.index
     )
-    delta_memory_fig = {
+    scheduler_log_fig = {
             'name': 'SchedulerLog',
             'frame': scheduler_log_frame,
             'ylabel': '',
@@ -261,7 +263,7 @@ for run_config in run_configs:
             'xlabel': 'repetitions',
         }
 
-    figures = [delta_memory_fig]#[levenshtein_comparison_fig, levenshtein_delta_fig]#[user_times_fig, delta_user_times_fig, memory_fig, delta_memory_fig]
+    figures = [scheduler_log_fig]#[user_times_fig, delta_user_times_fig, memory_fig, delta_memory_fig, levenshtein_comparison_fig, levenshtein_delta_fig, scheduler_log_fig]
     for fig in figures:
         print('Viewing figure {}'.format(fig['name']))
 
@@ -285,6 +287,7 @@ for run_config in run_configs:
             plt.savefig(os.path.join(cache_dir, '{}_{}.pdf'.format(run_config['name'], fig['name'])))
         else:
             plt.show()
+            input()
 
-    input()
+        plt.close()
 

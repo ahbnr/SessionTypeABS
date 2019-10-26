@@ -1,0 +1,11 @@
+0 -f-> ComputationServer:compute.
+  ComputationServer -fToReport-> ReportGenerator:toReport.
+  ComputationServer -fNotify-> Student:notify.
+    ReportGenerator -fPublish-> ServiceDesk:publish.
+    ReportGenerator resolves fToReport.
+      ServiceDesk resolves fPublish.
+  Student -fRequest-> ServiceDesk:request.
+    ServiceDesk resolves fRequest.
+  Student fetches fRequest.
+  Student resolves fNotify.
+ComputationServer resolves f

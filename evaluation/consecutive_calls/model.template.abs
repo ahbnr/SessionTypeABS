@@ -34,7 +34,10 @@ class P (QI qRef, IndirectionI indirection) implements PI {
       f{{method}} = qRef!{{method}}(i);
       {% endif %}
       {% if busywait_factor > 0 %}
-      busywait({{busywait_factor}});
+      //busywait({{busywait_factor}});
+      duration({{busywait_factor}}, {{busywait_factor}});
+      {% elif use_await %}
+      await f{{method}}?;
       {% endif %}
       {% endfor %}
 
@@ -62,6 +65,9 @@ class Indirection (QI qRef) implements IndirectionI {
   {% if method in indirection_methods %}
   Unit {{method}}(Int i) {
     fI{{method}} = qRef!{{method}}(i);
+    {% if use_await %}
+    await fI{{method}}?;
+    {% endif %}
   }
   {% endif %}
   {% endfor %}

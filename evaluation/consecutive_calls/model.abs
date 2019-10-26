@@ -19,9 +19,9 @@ interface PI {
 
 class P (QI qRef, IndirectionI indirection) implements PI {
   
-  Fut<Unit> fm0;
-  
   Fut<Unit> fm1;
+  
+  Fut<Unit> fm0;
   
 
   Unit m() {
@@ -31,17 +31,19 @@ class P (QI qRef, IndirectionI indirection) implements PI {
     while (i < 500) {
       
       
-      fm0 = qRef!m0(i);
-      
-      
-      busywait(20);
-      
-      
-      
       fm1 = qRef!m1(i);
       
       
-      busywait(20);
+      //busywait(10);
+      duration(10, 10);
+      
+      
+      
+      fm0 = qRef!m0(i);
+      
+      
+      //busywait(10);
+      duration(10, 10);
       
       
 
@@ -74,20 +76,20 @@ class Indirection (QI qRef) implements IndirectionI {
 
 interface QI {
   
-  Unit m0(Int i);
-  
   Unit m1(Int i);
+  
+  Unit m0(Int i);
   
 }
 
 class Q implements QI {
   
-  Unit m0(Int i) {
-    println("m0(" + toString(i) + ")");
-  }
-  
   Unit m1(Int i) {
     println("m1(" + toString(i) + ")");
+  }
+  
+  Unit m0(Int i) {
+    println("m0(" + toString(i) + ")");
   }
   
 }

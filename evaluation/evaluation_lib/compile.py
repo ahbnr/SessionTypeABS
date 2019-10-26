@@ -5,7 +5,7 @@ def compileModel(
         args,
         logActivationDelay: Iterable[str] = [],
         logSchedulerCalls: Iterable[str] = [],
-        noStaticChecks: bool = False
+        no_static_checks: bool = False
 ):
     options = []
     options += sum(
@@ -22,7 +22,7 @@ def compileModel(
             ),
             []
         )
-    if noStaticChecks:
+    if no_static_checks:
         options += ["--noStaticChecks"]
 
     subprocess.run(["../sdstool.sh", "compile", *options, *args])
