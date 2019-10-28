@@ -7,9 +7,9 @@ import subprocess
 import pandas as pd
 import random
 from typing import Sequence, NewType, Tuple
-from evaluate import evaluateCommand, evaluateSchedulerLog
-from render_template import renderTemplate
-from compile import compileModel
+from evaluation_lib.evaluate import evaluateCommand, evaluateSchedulerLog
+from evaluation_lib.render_template import renderTemplate
+from evaluation_lib.compile import compileModel
 
 from common_consecutive_calls import *
 
@@ -20,7 +20,7 @@ type_target_file = 'model.st'
 model_template_file = 'model.template.abs'
 model_target_file = 'model.abs'
 
-def buildModel(times: int, num_methods: int, shuffleMethods: bool = False, use_indirection=False, busywait_factor=0, use_await: bool=False):
+def buildModel(times: int, num_methods: int, reverse_methods: bool = False, shuffleMethods: bool = False, use_indirection=False, busywait_factor=0, use_await: bool=False):
     methodNames = list(
             map(
                 genMethod,
@@ -44,6 +44,9 @@ def buildModel(times: int, num_methods: int, shuffleMethods: bool = False, use_i
             }
         )
 
+    if reverse_methods:
+        methodNames = list(reversed(methodNames))
+
     if shuffleMethods:
         random.shuffle(methodNames)
 
@@ -60,90 +63,36 @@ def buildModel(times: int, num_methods: int, shuffleMethods: bool = False, use_i
         )
 
 run_configs = [
-        { # Phase III.1
-            'name': 'Method2DirectNoShuffleBusywait',
+        { # Phase III
+            'name': 'Method2DirectReverseBusywait',
             'num_methods': 2,
             'use_indirection': False,
             'shuffle_methods': False,
+            'reverse_methods': True,
             'use_await': False,
             'busywait_factor': 10,#20
             'no_static_checks': True
         },
-        { # Phase III.2
-            'name': 'Method2DirectShuffleBusywait',
+        { # Phase II
+            'name': 'Method2DirectNoShuffleAwait',
             'num_methods': 2,
             'use_indirection': False,
-            'shuffle_methods': True,
-            'use_await': False,
-            'busywait_factor': 10,#20
-            'no_static_checks': True
+            'shuffle_methods': False,
+            'reverse_methods': False,
+            'use_await': True,
+            'busywait_factor': 0,
+            'no_static_checks': False
         },
-        #{ # Phase II
-        #    'name': 'Method2DirectNoShuffleAwait',
-        #    'num_methods': 2,
-        #    'use_indirection': False,
-        #    'shuffle_methods': False,
-        #    'use_await': True,
-        #    'busywait_factor': 0,
-        #    'no_static_checks': False
-        #},
-        #{ # Phase I
-        #    'name': 'Method2DirectNoShuffle',
-        #    'num_methods': 2,
-        #    'use_indirection': False,
-        #    'shuffle_methods': False,
-        #    'use_await': False,
-        #    'busywait_factor': 0,
-        #    'no_static_checks': False
-        #}
-        #{
-        #    'name': 'Method2DirectNoShuffle',
-        #    'num_methods': 2,
-        #    'use_indirection': False,
-        #    'shuffle_methods': False,
-        #},
-        #{
-        #    'name': 'Method10DirectNoShuffle',
-        #    'num_methods': 10,
-        #    'use_indirection': False,
-        #    'shuffle_methods': False,
-        #},
-        #{
-        #    'name': 'Method2IndirectNoShuffle',
-        #    'num_methods': 2,
-        #    'use_indirection': True,
-        #    'shuffle_methods': False,
-        #},
-        #{
-        #    'name': 'Method10IndirectNoShuffle',
-        #    'num_methods': 10,
-        #    'use_indirection': True,
-        #    'shuffle_methods': False,
-        #},
-        #{
-        #    'name': 'Method2DirectShuffle',
-        #    'num_methods': 2,
-        #    'use_indirection': False,
-        #    'shuffle_methods': True,
-        #},
-        #{
-        #    'name': 'Method10DirectShuffle',
-        #    'num_methods': 10,
-        #    'use_indirection': False,
-        #    'shuffle_methods': True,
-        #},
-        #{
-        #    'name': 'Method2IndirectShuffle',
-        #    'num_methods': 2,
-        #    'use_indirection': True,
-        #    'shuffle_methods': True,
-        #},
-        #{
-        #    'name': 'Method10IndirectShuffle',
-        #    'num_methods': 10,
-        #    'use_indirection': True,
-        #    'shuffle_methods': True,
-        #}
+        { # Phase I
+            'name': 'Method2DirectNoShuffle',
+            'num_methods': 2,
+            'use_indirection': False,
+            'shuffle_methods': False,
+            'reverse_methods': False,
+            'use_await': False,
+            'busywait_factor': 0,
+            'no_static_checks': False
+        }
     ]
 
 
@@ -163,7 +112,9 @@ for run_config in run_configs:
                 num_methods=run_config['num_methods'],
                 use_indirection=run_config['use_indirection'],
                 busywait_factor=run_config['busywait_factor'],
-                use_await=run_config['use_await']
+                use_await=run_config['use_await'],
+                reverse_methods=run_config['reverse_methods'],
+                shuffleMethods=run_config['shuffle_methods']
             )
 
         compileModel([model_target_file], no_static_checks=run_config['no_static_checks'])
@@ -172,15 +123,7 @@ for run_config in run_configs:
         compileModel([model_target_file, type_target_file], no_static_checks=run_config['no_static_checks'])
         evaluation_with_enforcement = evaluateCommand(averaging_factor, 'gen/erl/run')
 
-        buildModel(
-                times=i,
-                num_methods=run_config['num_methods'],
-                use_indirection=run_config['use_indirection'],
-                shuffleMethods=run_config['shuffle_methods'],
-                busywait_factor=run_config['busywait_factor'],
-                use_await=run_config['use_await']
-            )
-        compileModel([model_target_file, type_target_file], logSchedulerCalls=['Model.Q'], logActivationDelay=['Model.Q'], no_static_checks=True)
+        compileModel([model_target_file, type_target_file], logSchedulerCalls=['Model.Q'], logActivationDelay=['Model.Q'], no_static_checks=run_config['no_static_checks'])
         scheduler_log = evaluateSchedulerLog(averaging_factor, 'gen/erl/run')
 
         evaluation_no_enforcement.update({'times': i})

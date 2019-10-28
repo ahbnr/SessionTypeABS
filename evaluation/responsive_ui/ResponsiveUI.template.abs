@@ -25,8 +25,6 @@ class UI (BackendI b) implements UII {
     Fut<Unit> fCmp;
 
     Int resume(Int v) {
-        Int i = 0;
-        while(i < 400) { print("LOL"); i = i + 1; }
         // ...
         return if (intern != Expect)
           then -1 else 1;
@@ -34,9 +32,9 @@ class UI (BackendI b) implements UII {
 
     Unit start(Int v) {
         this.fCmp = b!cmp(this, v);
-        
+        {% if set_expect %}
         intern = Expect;
-        
+        {% endif %}
     }
 }
 
@@ -44,5 +42,5 @@ class UI (BackendI b) implements UII {
     BackendI b = new Backend();
     UII u = new UI(b);
 
-    await u!start(-30);
+    await u!start({{start_value}});
 }

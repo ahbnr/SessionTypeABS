@@ -55,7 +55,7 @@ def stripParametersFromInvocations(invocations: Sequence[Tuple[str, int]]) -> Se
 index_file = open(os.path.join(cache_dir, 'index'), 'rb')
 run_configs = pickle.load(index_file)
 
-to_files = False
+to_files = True
 
 for run_config in run_configs:
     print('Viewing {}'.format(run_config['name']))
@@ -75,7 +75,7 @@ for run_config in run_configs:
 
     delta_user_times_frame = pd.DataFrame(
             data=data_frame.apply(
-                lambda x: (x['enforcement']['user'] - x['plain']['user']) / x['plain']['user'],
+                lambda x: ((x['enforcement']['user'] - x['plain']['user']) / x['plain']['user']) * 100,
                 axis=1
             ),
             columns=['relative increase']
@@ -105,7 +105,7 @@ for run_config in run_configs:
 
     delta_memory_frame = pd.DataFrame(
             data=data_frame.apply(
-                lambda x: (x['enforcement']['maximum_rss'] - x['plain']['maximum_rss']) / x['plain']['maximum_rss'],
+                lambda x: ((x['enforcement']['maximum_rss'] - x['plain']['maximum_rss']) / x['plain']['maximum_rss']) * 100,
                 axis=1
             ),
             columns=['relative increase']
@@ -135,8 +135,23 @@ for run_config in run_configs:
             'ylabel': '',
             'xlabel': 'repetitions'
         }
+    delta_scheduler_log = pd.DataFrame(
+            data=scheduler_log_frame.apply(
+                lambda x: (x['delays'] / x['calls of scheduler']) * 100,
+                axis=1
+            ).array,
+            columns=['percentage of delays'],
+            index=data_frame.index
+        )
+    delta_scheduler_log.index.name = 'repetitions'
+    delta_scheduler_log_fig = {
+            'name': 'DeltaSchedulerLog',
+            'frame': delta_scheduler_log,
+            'ylabel': 'delays per scheduler calls [%]',
+            'xlabel': 'repetitions'
+        }
 
-    data_frame = data_frame.drop([100,300,500])
+    data_frame = data_frame.drop([100,300,500,700,900])
     #levenshtein_sequential_frame = data_frame.applymap(
     #        lambda x: {
     #            'levenshtein': mean(
@@ -169,7 +184,7 @@ for run_config in run_configs:
 
     #levenshtein_sequential_delta_comparison_frame = pd.DataFrame(
     #    data=levenshtein_sequential_frame.apply(
-    #            lambda row: row['plain']['levenshtein'] / row['plain']['length'],
+    #            lambda row: (row['plain']['levenshtein'] / row['plain']['length']) * 100,
     #            axis=1
     #        ).array,
     #    columns=['relative edits'],
@@ -263,7 +278,7 @@ for run_config in run_configs:
             'xlabel': 'repetitions',
         }
 
-    figures = [scheduler_log_fig]#[user_times_fig, delta_user_times_fig, memory_fig, delta_memory_fig, levenshtein_comparison_fig, levenshtein_delta_fig, scheduler_log_fig]
+    figures = [user_times_fig, delta_user_times_fig, memory_fig, delta_memory_fig, levenshtein_comparison_fig, levenshtein_delta_fig, scheduler_log_fig, delta_scheduler_log_fig]
     for fig in figures:
         print('Viewing figure {}'.format(fig['name']))
 

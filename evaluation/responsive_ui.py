@@ -1,43 +1,25 @@
 #!/usr/bin/env python3
 
 import os
+import random
 from subprocess import run
 from evaluation_lib.compile import compileModel
+from evaluation_lib.render_template import renderTemplate
 
-num_executions = 100
+source_files = ['ResponsiveUI.abs', 'ResponsiveUI.st']
+os.chdir('responsive_ui')
 
-answer = input('Evaluate without enforcement? [Y/N] ')
+set_expect = True if input('Should the expect-flag be set? [Y/N] ') == 'Y' else False
+start_value = int(input('Enter the value "start" shall be called with: '))
 
-source_files = ['GradingSystem.abs']
-
-if answer == 'N':
-    source_files += ['GradingSystem.st']
-elif answer == 'Y':
-    pass
-else:
-    print('Cant parse answer.')
-    exit(-1)
-
-os.chdir('grading_system')
-
+renderTemplate(
+    'ResponsiveUI.template.abs',
+    'ResponsiveUI.abs',
+    {
+        'set_expect': set_expect,
+        'start_value': start_value
+    }
+)
 compileModel(source_files)
 
-fail_count = 0
-success_count = 0
-for i in range(0, num_executions):
-    process = run(['gen/erl/run'], capture_output=True)
-    
-    stdout: str = process.stdout.decode()
-    publishIdx = stdout.find("publish")
-    requestIdx = stdout.find("request")
-
-    if publishIdx < 0 or requestIdx < 0:
-        print("Model did not execute correctly, aborting.")
-        exit(-1)
-
-    if publishIdx < requestIdx:
-        success_count += 1
-    else:
-        fail_count += 1
-
-print('Invocation order failed {} out of {} times.'.format(fail_count, num_executions))
+run(['gen/erl/run'])
