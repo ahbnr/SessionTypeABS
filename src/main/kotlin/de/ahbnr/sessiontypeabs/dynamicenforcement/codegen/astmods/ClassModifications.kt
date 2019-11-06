@@ -23,7 +23,7 @@ import org.abs_models.frontend.ast.*
  *                      See also [de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.scheduler].
  */
 fun enforceAutomatonOnClass(classDecl: ClassDecl, automaton: SessionAutomaton, schedulerName: String) {
-    // TODO check whether the order of these modifications matters
+    // The order of these calls does matter!
     introduceStateField(classDecl, automaton)
     introduceRegisters(classDecl, automaton)
     introduceInvocREvStateTransitions(classDecl, automaton)
@@ -173,7 +173,3 @@ fun introduceReactivationTransitions(classDecl: ClassDecl, automaton: SessionAut
             introduceReactivationTransitions(it, classDecl, automaton)
         }
 }
-
-// ERLANG: #process_info{destiny=Fut} = get(process_info),
-// TODO: ContractInference:_ src/main/java/deadlock/analyser/inference/ContractInference.java
-// CallResolver?: src/main/java/org/abs_models/frontend/delta/OriginalCallResolver.jadd

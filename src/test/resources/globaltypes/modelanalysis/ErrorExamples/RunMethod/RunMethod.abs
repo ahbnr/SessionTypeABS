@@ -1,0 +1,19 @@
+module RunMethod;
+
+interface ActorI {
+    Unit m();
+}
+
+class Actor implements ActorI {
+    Unit run() {
+        println("Test");
+    }
+
+    Unit m() { }
+}
+
+{
+    ActorI a = new Actor();
+
+    await a!m();
+}

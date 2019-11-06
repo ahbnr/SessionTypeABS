@@ -23,6 +23,10 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import org.junit.runner.RunWith
 
+/**
+ * This package was an attempt at automatic Model and Session Type generation for tests.
+ * It did work at some point, but I stopped maintaining it, so its broken for now
+ */
 
 //@RunWith(JUnitQuickcheck::class)
 class Test {

@@ -1,0 +1,17 @@
+module RecoveryBlock;
+
+interface ActorI {
+    Unit m();
+}
+
+class Actor implements ActorI {
+    recover { AssertionFailException() => println("Hello World"); }
+
+    Unit m() { }
+}
+
+{
+    ActorI a = new Actor();
+
+    await a!m();
+}
