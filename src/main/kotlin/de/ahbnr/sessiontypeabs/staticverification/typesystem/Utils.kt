@@ -69,7 +69,7 @@ fun <T> isCommunicationInert(
                     environment
                 )
             } else {
-                true // FIXME: Should be true?
+                true // TODO: Should be true?
             }
         is AssignStmt -> {
                 val assignedVarOrField = node.varNoTransform
@@ -82,7 +82,7 @@ fun <T> isCommunicationInert(
                         environment
                     )
             }
-        is Call -> !environment.isActor(node.calleeNoTransform) // TODO: Does not allow calling methods, which are not specified in the protocol. Do we want this?
+        is Call -> !environment.isActor(node.calleeNoTransform)
         is NewExp -> isNewCommunicationInert(node, environment)
         else -> false
     }

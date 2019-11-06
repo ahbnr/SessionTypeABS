@@ -80,9 +80,7 @@ class Student (ServiceDeskI d) implements StudentI {
         println("Student: Lets see how I did in my exam...");
         this.requestTask = d!request();
 
-        Fut<String> requestTask = this.requestTask; // Hack due to ABS bug, TODO remove
-
-        await requestTask?;
+        await this.requestTask?;
         traceStore = traceReactivation(traceStore, "announce", thisDestiny);
 
         String gradeReport = this.requestTask.get;

@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.staticverification.typesystem
 
+import de.ahbnr.sessiontypeabs.abstoolsmods.qualifiedClassName
 import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.analysis.findCalls
 import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.analysis.findChildren
 import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.analysis.parents
@@ -10,7 +11,7 @@ import de.ahbnr.sessiontypeabs.types.AnalyzedGlobalType
 import de.ahbnr.sessiontypeabs.staticverification.typesystem.exceptions.ModelAnalysisException
 import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
 import de.ahbnr.sessiontypeabs.types.head
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 import org.abs_models.frontend.ast.*
 
 fun checkMainBlock(mainBlock: MainBlock, sessionType: AnalyzedGlobalType<CombinedAnalysis>, actorModelMapping: ActorModelMapping, verificationConfig: VerificationConfig) {
@@ -96,18 +97,18 @@ ${
 }
 
 
-// FIXME: Does getClassName on NewExp yield the fully qualified name?
+// TODO: Does getClassName on NewExp yield the fully qualified name?
 fun checkForNew(namesOfParticipants: Collection<String>, vararg stmts: Stmt) {
     val createdParticipants = mutableSetOf<String>()
 
     for (stmt in stmts) {
         stmt
             .findChildren<NewExp>()
-            .filter { it.className in namesOfParticipants }
+            .filter { it.qualifiedClassName in namesOfParticipants }
             .forEach { newExp ->
-                if (newExp.className in createdParticipants) {
+                if (newExp.qualifiedClassName in createdParticipants) {
                     throw ModelAnalysisException(
-                        """|The class ${newExp.className} is instantiated twice, but it participates in a session type and may thus only be instantiated once.
+                        """|The class ${newExp.qualifiedClassName} is instantiated twice, but it participates in a session type and may thus only be instantiated once.
                            |
                            |Solution: Please remove all duplicate new-Expressions for the class.
                         """.trimMargin()
@@ -119,7 +120,7 @@ fun checkForNew(namesOfParticipants: Collection<String>, vararg stmts: Stmt) {
 
                     if (loop != null) {
                         throw ModelAnalysisException(
-                            """|The class ${newExp.className} might be instantiated multiple times,
+                            """|The class ${newExp.qualifiedClassName} might be instantiated multiple times,
                                |since there is a new expression for the class nested in a while-loop,
                                |but it participates in a session type and may thus only be instantiated once.
                                |
@@ -131,7 +132,7 @@ fun checkForNew(namesOfParticipants: Collection<String>, vararg stmts: Stmt) {
                     }
 
                     else {
-                        createdParticipants.add(newExp.className)
+                        createdParticipants.add(newExp.qualifiedClassName)
                     }
                 }
             }

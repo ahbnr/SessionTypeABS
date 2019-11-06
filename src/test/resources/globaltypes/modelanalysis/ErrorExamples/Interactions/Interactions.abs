@@ -1,0 +1,45 @@
+module Interactions;
+
+interface AI {
+    Unit m();
+}
+
+class A (BI b) implements AI {
+    Fut<Unit> f2;
+    Fut<Unit> f4;
+
+    Unit m() {
+        f4 = b!m2();
+        f2 = b!m1();
+    }
+}
+
+interface BI {
+    Unit m1();
+    Unit m2();
+}
+
+class B (CI c) implements BI {
+    Fut<Unit> f3;
+
+    Unit m1() {
+        f3 = c!m();
+    }
+    Unit m2() { }
+}
+
+interface CI {
+    Unit m();
+}
+
+class C implements CI {
+    Unit m() { }
+}
+
+{
+    CI c = new C();
+    BI b = new B(c);
+    AI a = new A(b);
+
+    await a!m();
+}

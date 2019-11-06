@@ -2,6 +2,8 @@ package de.ahbnr.sessiontypeabs.abstoolsmods
 
 import org.abs_models.backend.prettyprint.DefaultABSFormatter
 import org.abs_models.frontend.ast.ASTNode
+import org.abs_models.frontend.ast.NewExp
+import org.abs_models.frontend.typechecker.UnionType
 import java.io.PrintWriter
 import java.io.StringWriter
 
@@ -18,4 +20,7 @@ inline fun ASTNode<*>.oneshotPrettyPrint(): String {
 
     return stringWriter.toString()
 }
+
+val NewExp.qualifiedClassName
+    get() = (this.type as UnionType).originatingClass.qualifiedName
 

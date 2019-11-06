@@ -1,7 +1,6 @@
 package de.ahbnr.sessiontypeabs.types
 
-import org.abs_models.frontend.ast.PureExp
-import sun.reflect.misc.ConstructorUtil
+import de.ahbnr.sessiontypeabs.intersperse
 
 sealed class MethodLocalType {
     data class Sending(
@@ -26,7 +25,7 @@ sealed class MethodLocalType {
         override fun toString() = "Get ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
-    data class Suspension( // Await, TODO maybe call it Release, too, to redce confusion
+    data class Suspension(
         val suspendedFuture: Future,
         val awaitedFuture: Future
     ): MethodLocalType() {
@@ -65,7 +64,7 @@ sealed class MethodLocalType {
         override fun toString() = "skip"
     }
 
-    object Termination: MethodLocalType() {// TODO integrate in projection execution etc. Relevant in branching.
+    object Termination: MethodLocalType() {
         override fun toString() = "end"
     }
 
@@ -136,7 +135,7 @@ infix fun MethodLocalType?.concat(rhs: MethodLocalType?): MethodLocalType? =
         )
     }
 
-// FIXME This function is used to determine the minimal prefix of offer branches. Is a flat count really the right way to do this?
+// TODO This function is used to determine the minimal prefix of offer branches. Is a flat count really the right way to do this?
 val MethodLocalType?.flatSize: Int
     get() = this?.let {
         when (it) {

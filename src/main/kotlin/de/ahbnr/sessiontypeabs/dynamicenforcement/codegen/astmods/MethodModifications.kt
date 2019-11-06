@@ -662,7 +662,7 @@ private fun genStateCache(varName: String) =
         VarDecl(
             varName,
             UnresolvedTypeUse(
-                "Int", // FIXME refactor into outside definition
+                "Int", // TODO refactor into outside definition
                 List() // no annotations
             ),
             Opt(FieldUse(stateFieldIdentifier))

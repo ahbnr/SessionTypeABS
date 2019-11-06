@@ -1,0 +1,16 @@
+module DoubleNewInMain;
+
+interface ActorI {
+    Unit m();
+}
+
+class Actor implements ActorI {
+    Unit m() { }
+}
+
+{
+    ActorI a = new Actor();
+    new Actor();
+
+    await a!m();
+}

@@ -63,7 +63,6 @@ fun condenseType(type: LocalType): CondensedType {
 
         override fun visit(type: LocalType.Skip) = CondensedType.Skip
 
-        // TODO deal with termination correctly
         override fun visit(type: LocalType.Termination) = CondensedType.Skip
     }
 

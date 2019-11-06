@@ -52,7 +52,6 @@ fun checkClass(classDecl: ClassDecl, objectType: AnalyzedLocalType, actorModelMa
     classDecl
         .methodsNoTransform
         .forEach {
-            //FIXME: Make sure, there is no init block or run method, or recovery block.
             checkMethod(
                 classDecl,
                 it,

@@ -81,7 +81,7 @@ fun buildTypes(globalTypes: Collection<GlobalType>, model: Model?): TypeBuildCol
  * maps for local Session Types are generated during projection.
  * This function combines them into one map.
  *
- * //FIXME: Throw exception, if a class key is present in multiple maps
+ * //TODO: Throw exception, if a class key is present in multiple maps
  */
 fun mergeLocalTypes(localTypesList: List<Map<Class, AnalyzedLocalType>>) =
     localTypesList.fold(emptyMap<Class, AnalyzedLocalType>()) {

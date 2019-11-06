@@ -4,7 +4,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.CompilerException
 import de.ahbnr.sessiontypeabs.head
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 import org.abs_models.frontend.ast.ClassDecl
 import org.abs_models.frontend.ast.Model
 

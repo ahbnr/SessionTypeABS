@@ -1,7 +1,7 @@
 package de.ahbnr.sessiontypeabs.cli
 
 import de.ahbnr.sessiontypeabs.compiler.buildTypes
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 
 import picocli.CommandLine.*
 

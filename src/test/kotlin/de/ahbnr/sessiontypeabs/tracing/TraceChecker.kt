@@ -2,7 +2,7 @@ package de.ahbnr.sessiontypeabs.tracing
 
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Future
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 import org.assertj.core.api.Assertions.assertThat
 import kotlin.math.min
 

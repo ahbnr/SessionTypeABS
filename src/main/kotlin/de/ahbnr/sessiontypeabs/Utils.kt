@@ -27,3 +27,12 @@ val <T> List<T>.head: T
 
 fun <T> Set<T>.isSubsetOf(rhs: Collection<T>): Boolean =
     this.all { it in rhs }
+
+fun List<String>.intersperse(divider: String) =
+    if (isEmpty()) {
+        ""
+    }
+
+    else {
+        reduce{ acc, next -> "$acc$divider$next"}
+    }

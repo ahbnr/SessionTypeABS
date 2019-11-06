@@ -75,8 +75,6 @@ data class ClassActivityDomain(
      * if there are still non reactivated suspensions.
      *
      * Furthermore, classes suspended on the resolved future must be reactivated.
-     *
-     * FIXME: Search deeper layers of suspension stack for resolved futures!
      */
     private fun transfer(label: GlobalType.Resolution): ClassActivityDomain {
         // Make resolved class inactive or recover its old suspended state

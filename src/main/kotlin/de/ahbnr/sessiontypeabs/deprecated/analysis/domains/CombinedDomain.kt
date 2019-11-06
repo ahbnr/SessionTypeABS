@@ -13,6 +13,7 @@ import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.analyses.Confi
  * Combines all other domains into one analysis/validation mechanism for global session
  * types.
  */
+@Deprecated("Use package [de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis] instead.")
 data class CombinedDomain(
     private val classActivity: ClassActivityDomain = ClassActivityDomain(),
     private val classComputation: ClassComputationDomain = ClassComputationDomain(),
@@ -76,7 +77,6 @@ data class CombinedDomain(
             participantsTracker = participantsTracker merge rhs.participantsTracker
         )
 
-    // FIXME: Apply to all subdomains!
     override fun closeScope(finalizedType: GlobalType) = this.copy()
 
     fun getSuspensionsOnFuture(f: Future) =

@@ -39,8 +39,7 @@ class Client (PrinterI printer) implements ClientI {
             println("Client: Trying to print page no. " + toString(i));
 
             pageRequest = printer!preparePage();
-            Fut<StatusMsg> pageRequest = this.pageRequest; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
-            await pageRequest?;
+            await this.pageRequest?;
             traceStore = traceReactivation(traceStore, "main", thisDestiny);
 
             println("Client: Printer returned a status code.");
@@ -50,8 +49,7 @@ class Client (PrinterI printer) implements ClientI {
                 Ok => {
                     printJob = printer!print(nth(pages, i));
                     finalization = printer!finishPage();
-                    Fut<Unit> finalization = this.finalization; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
-                    await finalization?;
+                    await this.finalization?;
                     traceStore = traceReactivation(traceStore, "main", thisDestiny);
 
                     println("Client: Printer confirms that page no. " + toString(i) + " has been printed.");
@@ -71,8 +69,7 @@ class Client (PrinterI printer) implements ClientI {
         printTrace(traceStore);
         printPrinterTrace = printer!printTrace();
 
-        Fut<Unit> printPrinterTrace = this.printPrinterTrace; // FIXME: Remove these temporaries, as soon as the field-await ABS Bug has been solved
-        await printPrinterTrace?;
+        await this.printPrinterTrace?;
     }
 }
 

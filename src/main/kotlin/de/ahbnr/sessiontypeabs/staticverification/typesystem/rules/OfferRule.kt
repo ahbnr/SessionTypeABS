@@ -8,7 +8,7 @@ import de.ahbnr.sessiontypeabs.staticverification.typesystem.StmtsRule
 import de.ahbnr.sessiontypeabs.staticverification.typesystem.checkStmts
 import de.ahbnr.sessiontypeabs.staticverification.typesystem.isCommunicationInert
 import de.ahbnr.sessiontypeabs.types.concat
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 
 import org.abs_models.frontend.ast.*
 
@@ -52,7 +52,6 @@ object OfferRule: StmtsRule {
                         !(
                             caseBranchStmt.leftNoTransform is UnderscorePattern &&
                             caseBranchStmt.rightNoTransform.let { right ->
-                                // FIXME: Do we really want to ignore exceptions? Also: Detecting PatternMatchExceptions is very specific
                                 right is Block
                                 right.stmtsNoTransform.toList().let { stmts ->
                                     stmts.size == 1 &&

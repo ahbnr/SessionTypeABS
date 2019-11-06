@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.types
 
+import de.ahbnr.sessiontypeabs.intersperse
 import de.ahbnr.sessiontypeabs.types.parser.FileContext
 import org.abs_models.frontend.ast.PureExp
 
@@ -73,7 +74,7 @@ sealed class GlobalType {
             get() = true
     }
 
-    data class Fetching( // TODO better name
+    data class Fetching(
         val c: Class,
         val f: Future,
         val constructor: ADTConstructor?,
@@ -158,13 +159,3 @@ interface GlobalTypeVisitor<ReturnT> {
     fun visit(type: GlobalType.Skip): ReturnT
 }
 
-// TODO move to utility library
-
-fun List<String>.intersperse(divider: String) =
-    if (isEmpty()) {
-        ""
-    }
-
-    else {
-        reduce{ acc, next -> "$acc$divider$next"}
-    }

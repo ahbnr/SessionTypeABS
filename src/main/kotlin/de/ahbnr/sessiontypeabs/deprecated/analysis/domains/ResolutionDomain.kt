@@ -7,7 +7,7 @@ import de.ahbnr.sessiontypeabs.deprecated.analysis.domains.interfaces.Repeatable
 import de.ahbnr.sessiontypeabs.deprecated.analysis.domains.utils.JoinSemiFlatLattice
 import de.ahbnr.sessiontypeabs.deprecated.analysis.exceptions.FinalizationException
 import de.ahbnr.sessiontypeabs.deprecated.analysis.exceptions.TransferException
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 
 private typealias ResolutionState = JoinSemiFlatLattice<Boolean>
 private typealias UnknownResolutionState = JoinSemiFlatLattice.Any<Boolean>

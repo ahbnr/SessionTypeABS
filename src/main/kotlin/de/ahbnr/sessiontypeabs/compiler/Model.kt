@@ -113,8 +113,6 @@ fun applyTypesToModel(model: Model, types: Map<Class, CondensedType>, enforcemen
 /**
  * Checks ABS model for parser, type errors etc. and prepares it for
  * compilation.
- *
- * FIXME: Throw fitting exception in case of errors
  */
 fun checkAndRewriteModel(model: Model) {
     val main = makeMain()

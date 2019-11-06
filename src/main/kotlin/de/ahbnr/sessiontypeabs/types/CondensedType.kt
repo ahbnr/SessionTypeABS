@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.types
 
+import de.ahbnr.sessiontypeabs.intersperse
 import org.abs_models.frontend.ast.PureExp
 
 sealed class CondensedType {

@@ -1,0 +1,25 @@
+module NewOutsideMain;
+
+interface ActorI {
+    Unit m();
+}
+
+class Actor implements ActorI {
+    Unit m() { }
+}
+
+interface FooI {
+    Unit m();
+}
+
+class Foo implements FooI {
+    Unit m() {
+        new Actor();
+    }
+}
+
+{
+    ActorI a = new Actor();
+
+    await a!m();
+}

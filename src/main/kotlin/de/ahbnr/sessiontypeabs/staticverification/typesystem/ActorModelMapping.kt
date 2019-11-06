@@ -5,7 +5,7 @@ import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.AnalyzedGlobalType
 import de.ahbnr.sessiontypeabs.staticverification.typesystem.exceptions.ModelAnalysisException
 import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
-import de.ahbnr.sessiontypeabs.types.intersperse
+import de.ahbnr.sessiontypeabs.intersperse
 import org.abs_models.frontend.ast.ClassDecl
 import org.abs_models.frontend.typechecker.InterfaceType
 import org.abs_models.frontend.typechecker.Type

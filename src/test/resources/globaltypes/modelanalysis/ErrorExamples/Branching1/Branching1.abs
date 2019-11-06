@@ -1,0 +1,58 @@
+module Branching1;
+
+data Message = Ok | Error;
+
+interface AI {
+    Unit m();
+}
+
+class A (BI b) implements AI {
+    Fut<Message> f2;
+    Fut<Unit> f3;
+    Fut<Unit> f4;
+
+    Unit m() {
+        f2 = b!m1();
+        await f2?;
+        Message result = f2.get;
+
+        case result {
+            Ok => f4 = b!m3();
+            Error => f3 = b!m2();
+        }
+    }
+}
+
+interface BI {
+    Message m1();
+    Unit m2();
+    Unit m3();
+}
+
+class B implements BI {
+    Message m1() {
+        Int decision = random(2);
+        Message result = Error;
+
+        if (decision == 0) {
+            result = Ok;
+        }
+
+        else {
+            result = Error;
+        }
+
+        return result;
+    }
+
+    Unit m2() { }
+
+    Unit m3() { }
+}
+
+{
+    BI b = new B();
+    AI a = new A(b);
+
+    await a!m();
+}

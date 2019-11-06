@@ -11,18 +11,10 @@ import de.ahbnr.sessiontypeabs.staticverification.typesystem.rules.debug_rules.N
 import de.ahbnr.sessiontypeabs.staticverification.typesystem.rules.debug_rules.NoNewRule
 import org.abs_models.frontend.ast.*
 
-// FIXME
 /**
- * Things to fix in the calculus:
+ * Notes on the calculus:
  *
- * * Get expression only on fields
- * * Class parameter syntax looks wrong
- * * Await rule waits on the wrong future in the listing
- * * dont allow If or Case Stmts in Choice Rule
- * * Choice clashes with Block
- * * VarAssignRule and FieldAssignRule are downgraded to a debug rules. isCommInert can do it.
- * * return rule excludes choice
- * * MethodEnd should be renamed to StmtsEnd, and it should allow type == Skip
+ * * VarAssignRule and FieldAssignRule have been downgraded to a debug rules. isCommInert can do it.
  */
 
 val stmtRules = listOf(
@@ -90,6 +82,9 @@ fun checkStmts(env: StmtsEnvironment, stmts: List<Stmt>, type: MethodLocalType?)
 
 fun checkMethodEnd(env: StmtsEnvironment, type: MethodLocalType) =
     if (type is MethodLocalType.Resolution || type is MethodLocalType.Skip) {
+        // contrary to the calculus, we also allow the Skip type, to emulate the skip rule on empty statements.
+        // This is ok, since method types always end with put.
+
         // OK, nothing left to do, axiom rule
     }
 
@@ -115,34 +110,3 @@ fun checkTypeEnd(env: StmtsEnvironment, stmts: List<Stmt>) =
         )
     }
 
-
-//fun checkIfSupported(stmt: Stmt) =
-//    when (stmt) {
-//        is Block, is CaseStmt, is IfStmt, is AwaitStmt, is AssertStmt, is ExpressionStmt, is ReturnStmt, is AssignStmt, is VarDeclStmt, is SkipStmt, is WhileStmt, is ForeachStmt
-//        -> true
-//        is SuspendStmt
-//        -> throw ModelAnalysisException("In methods participating in a Session Type, no unconditional suspend statements are allowed.")
-//        is ThrowStmt
-//        -> throw ModelAnalysisException("Throwing exceptions is currently not supported by Session Type ABS.")
-//        is TryCatchFinallyStmt
-//        -> throw ModelAnalysisException("Handling exceptions (try-catch-finally) is currently not supported by Session Type ABS.")
-//        else
-//        -> throw ModelAnalysisException("The statement $stmt is currently not supported by Session Type ABS, or at least not supported in this part of the ABS model.")
-//    }
-//
-//fun checkIfSupported(exp: EffExp) =
-//    when (exp) {
-//        is GetExp, is AsyncCall, is AwaitAsyncCall, is NewExp // FIXME handle new expression as call to run / init
-//        -> true
-//        is SyncCall
-//        -> throw ModelAnalysisException("Synchronous calls are not supported in Session Type ABS, since it encompasses suspension of its whole COG, which can not be represented with a Session Type at the time.")
-//        is OriginalCall
-//        -> throw ModelAnalysisException("Traits are currently not supported by Session Type ABS, thus a `original` call is also not supported.")
-//        else
-//        -> throw ModelAnalysisException(
-//            """
-//                    Found an expression which is neither an EffExp nor pure. Thus, it is not supported by Session Type ABS.
-//                    Offending expression: $exp
-//                """.trimIndent().trimMargin()
-//        )
-//    }

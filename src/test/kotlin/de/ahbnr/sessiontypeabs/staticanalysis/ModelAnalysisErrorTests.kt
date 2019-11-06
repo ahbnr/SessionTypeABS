@@ -58,7 +58,11 @@ class ModelAnalysisErrorTests {
     fun inputFilesProvider() = Stream.of(
         Arguments.of("InitBlock"),
         Arguments.of("RecoveryBlock"),
-        Arguments.of("RunMethod")
+        Arguments.of("RunMethod"),
+        Arguments.of("NewOutsideMain"),
+        Arguments.of("DoubleNewInMain"),
+        Arguments.of("Interactions"),
+        Arguments.of("Fetching"),
+        Arguments.of("Branching1")
     )
-
 }

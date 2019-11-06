@@ -35,7 +35,6 @@ object ChoiceRule: StmtsRule {
 
         val choiceType = typeHead as MethodLocalType.Choice
 
-        // FIXME: Maybe not use exceptions for error handling?
         // (a)
         choiceType.choices.any {choice ->
             try {

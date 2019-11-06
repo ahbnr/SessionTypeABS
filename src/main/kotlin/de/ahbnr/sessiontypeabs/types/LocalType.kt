@@ -1,5 +1,6 @@
 package de.ahbnr.sessiontypeabs.types
 
+import de.ahbnr.sessiontypeabs.intersperse
 import org.abs_models.frontend.ast.PureExp
 
 sealed class LocalType {
@@ -58,7 +59,7 @@ sealed class LocalType {
         override fun toString() = "Get ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
     }
 
-    data class Suspension( // Await, TODO maybe call it Release, too, to redce confusion
+    data class Suspension(
         val suspendedFuture: Future,
         val awaitedFuture: Future
     ): LocalType() {
@@ -103,7 +104,7 @@ sealed class LocalType {
         override fun toString() = "skip"
     }
 
-    object Termination: LocalType() {// TODO integrate in projection execution etc. Relevant in branching.
+    object Termination: LocalType() {
         override fun toString() = "end"
     }
 
