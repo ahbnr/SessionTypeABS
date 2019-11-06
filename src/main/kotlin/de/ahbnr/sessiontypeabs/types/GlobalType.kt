@@ -23,6 +23,9 @@ sealed class GlobalType {
                 ""
             }
         }"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     data class Concatenation(
@@ -31,6 +34,9 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "$lhs.\n$rhs"
+
+        override val isAtomic: Boolean
+            get() = false
     }
 
     data class Interaction(
@@ -50,6 +56,9 @@ sealed class GlobalType {
                 ""
             }
         }"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     data class Resolution(
@@ -59,6 +68,9 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "${c.value} resolves ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     data class Fetching( // TODO better name
@@ -68,6 +80,9 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "${c.value} fetches ${f.value}${constructor?.let {"(${it.value})"} ?: ""}"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     data class Release(
@@ -76,6 +91,9 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "Rel(${c.value}, ${f.value})"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     data class Branching(
@@ -84,6 +102,9 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "${choosingActor.value}{${branches.map{ it.toString() }.intersperse(", ")}}"
+
+        override val isAtomic: Boolean
+            get() = false
     }
 
     data class Repetition(
@@ -91,10 +112,16 @@ sealed class GlobalType {
         override val fileContext: FileContext? = null
     ): GlobalType() {
         override fun toString() = "($repeatedType)*"
+
+        override val isAtomic: Boolean
+            get() = false
     }
 
     object Skip: GlobalType() {
         override fun toString() = "skip"
+
+        override val isAtomic: Boolean
+            get() = true
     }
 
     fun <ReturnT> accept(visitor: GlobalTypeVisitor<ReturnT>): ReturnT =
@@ -109,6 +136,8 @@ sealed class GlobalType {
             is Repetition -> visitor.visit(this)
             is Skip -> visitor.visit(this)
         }
+
+    abstract val isAtomic: Boolean
 }
 
 val GlobalType.head: GlobalType

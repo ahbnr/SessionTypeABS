@@ -1,0 +1,62 @@
+module NotificationService;
+
+data MailMsg = NewMail(String mail) | NoMail;
+
+interface NotificationServiceI {
+    Unit init();
+}
+
+interface MailServerI {
+    MailMsg checkMail();
+}
+
+interface UII {
+  Unit popup(String mail);
+}
+
+class NotificationService (MailServerI m, UII u) implements NotificationServiceI {
+    Fut<MailMsg> fCheckMail;
+    Fut<Unit> fPopup;
+
+    Unit init() {
+        Int i = 0;
+        while (i < 900) {
+          this.fCheckMail = m!checkMail();
+          await this.fCheckMail?;
+
+          MailMsg response = this.fCheckMail.get;
+
+          case response {
+            NewMail(mail) => this.fPopup = u!popup(mail);
+            NoMail => skip;
+          }
+          
+          i = i + 1;
+        }
+    }
+}
+
+class MailServer implements MailServerI {
+  MailMsg checkMail() {
+    MailMsg result = NoMail;
+    if (random(2) == 1) {
+      result = NewMail("Hello World!");
+    }
+
+    return result;
+  }
+}
+
+class UI implements UII {
+    Unit popup(String mail) {
+        println("You got mail: " + mail);
+    }
+}
+
+{
+    MailServerI m = new MailServer();
+    UII u = new UI();
+    NotificationServiceI n = new NotificationService(m, u);
+
+    await n!init();
+}

@@ -1,2 +1,3 @@
 
-0 -f-> O:m
+0 -f-> O:m.
+O resolves f

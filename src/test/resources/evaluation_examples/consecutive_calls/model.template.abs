@@ -1,0 +1,96 @@
+module Model;
+
+def List<Int> range(Int start, Int until) =
+  if start >= until then
+    Nil
+  else
+    Cons(start, range(start+1, until));
+
+def Int busywait(Int factor) =
+  let
+    List<Unit> wait = map((Int i) => 
+      print(if i >= 0 then "" else "")
+    )(range(0, factor))
+  in 0;
+
+interface PI {
+  Unit m();
+}
+
+class P (QI qRef, IndirectionI indirection) implements PI {
+  {% for method in methods %}
+  Fut<Unit> f{{method}};
+  {% endfor %}
+
+  Unit m() {
+    println("m");
+
+    Int i = 0;
+    while (i < {{times}}) {
+      {% for method in methods %}
+      {% if method in indirection_methods %}
+      f{{method}} = indirection!{{method}}(i);
+      {% else %}
+      f{{method}} = qRef!{{method}}(i);
+      {% endif %}
+      {% if busywait_factor > 0 %}
+      //busywait({{busywait_factor}});
+      duration({{busywait_factor}}, {{busywait_factor}});
+      {% elif use_await %}
+      await f{{method}}?;
+      {% endif %}
+      {% endfor %}
+
+      i = i + 1;
+    }
+  }
+}
+
+interface IndirectionI {
+  {% for method in methods %}
+  {% if method in indirection_methods %}
+  Unit {{method}}(Int i);
+  {% endif %}
+  {% endfor %}
+}
+
+class Indirection (QI qRef) implements IndirectionI {
+  {% for method in methods %}
+  {% if method in indirection_methods %}
+  Fut<Unit> fI{{method}};
+  {% endif %}
+  {% endfor %}
+
+  {% for method in methods %}
+  {% if method in indirection_methods %}
+  Unit {{method}}(Int i) {
+    fI{{method}} = qRef!{{method}}(i);
+    {% if use_await %}
+    await fI{{method}}?;
+    {% endif %}
+  }
+  {% endif %}
+  {% endfor %}
+}
+
+interface QI {
+  {% for method in methods %}
+  Unit {{method}}(Int i);
+  {% endfor %}
+}
+
+class Q implements QI {
+  {% for method in methods %}
+  Unit {{method}}(Int i) {
+    println("{{method}}(" + toString(i) + ")");
+  }
+  {% endfor %}
+}
+
+{
+  QI q = new Q();
+  IndirectionI indirection = new Indirection(q);
+  PI p = new P(q, indirection);
+
+  await p!m();
+}

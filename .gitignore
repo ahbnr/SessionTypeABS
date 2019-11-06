@@ -6,3 +6,4 @@ META-INF
 cache
 venv
 __pycache__
+stable-req.txt

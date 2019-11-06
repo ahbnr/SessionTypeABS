@@ -1,0 +1,73 @@
+module GradingSystem;
+
+interface ComputationServerI {
+    Unit compute();
+}
+
+interface ReportGeneratorI {
+  Unit toReport(Int grade);
+}
+
+interface ServiceDeskI {
+    Unit publish(String report);
+    String request();
+}
+
+interface StudentI {
+    Unit notify();
+}
+
+class ComputationServer (ReportGeneratorI r, StudentI s) implements ComputationServerI {
+    Fut<Unit> fToReport;
+    Fut<Unit> fNotify;
+
+    Unit compute() {
+        Int grade = random(6) + 1;
+
+        this.fToReport = r!toReport(grade);
+        this.fNotify = s!notify();
+    }
+}
+
+class ReportGenerator (ServiceDeskI d) implements ReportGeneratorI {
+  Fut<Unit> fPublish;
+
+  Unit toReport(Int grade) {
+    duration(1, 1);
+    this.fPublish = d!publish(
+      "Your grade: " + toString(grade)
+    );
+  }
+}
+
+class ServiceDesk implements ServiceDeskI {
+    Maybe<String> report = Nothing;
+
+    Unit publish(String report) {
+        println("publish");
+        this.report = Just(report);
+    }
+
+    String request() {
+        println("request");
+        return fromJust(this.report);
+    }
+}
+
+class Student (ServiceDeskI d) implements StudentI {
+    Fut<String> fRequest;
+
+    Unit notify() {
+        this.fRequest = d!request();
+        String gradeReport = this.fRequest.get;
+    }
+}
+
+{
+    ServiceDeskI d = new ServiceDesk();
+    ReportGeneratorI r = new ReportGenerator(d);
+    StudentI s = new Student(d);
+    ComputationServerI c = new ComputationServer(r, s);
+
+    await c!compute();
+}

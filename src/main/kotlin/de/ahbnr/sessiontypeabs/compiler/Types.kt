@@ -1,10 +1,13 @@
 package de.ahbnr.sessiontypeabs.compiler
 
+import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.analyses.CombinedAnalysis
+import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.execute
 import de.ahbnr.sessiontypeabs.types.Class
-import de.ahbnr.sessiontypeabs.types.CondensedType
 import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.*
-import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
+import de.ahbnr.sessiontypeabs.types.AnalyzedLocalType
+import de.ahbnr.sessiontypeabs.types.condenseType
+import de.ahbnr.sessiontypeabs.preprocessing.projection.project
+import de.ahbnr.sessiontypeabs.staticverification.resolveActorNames
 import de.ahbnr.sessiontypeabs.types.parser.parseGlobalType
 import org.abs_models.frontend.ast.Model
 import java.io.File
@@ -48,7 +51,7 @@ fun buildTypes(globalTypes: Collection<GlobalType>, model: Model?): TypeBuildCol
                 }
 
             // validate all global session types
-            val analysis = execute(CombinedDomain(), resolvedGlobalType)
+            val analysis = execute(CombinedAnalysis(), resolvedGlobalType)
 
             // Project session types onto actors (classes)
             val objectProjection = project(analysis)

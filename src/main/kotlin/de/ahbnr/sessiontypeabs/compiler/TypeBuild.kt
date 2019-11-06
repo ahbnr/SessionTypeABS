@@ -1,15 +1,14 @@
 package de.ahbnr.sessiontypeabs.compiler
 
 import de.ahbnr.sessiontypeabs.mergeMaps
+import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.analyses.CombinedAnalysis
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.CondensedType
-import de.ahbnr.sessiontypeabs.types.GlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedGlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedLocalType
-import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
+import de.ahbnr.sessiontypeabs.types.AnalyzedGlobalType
+import de.ahbnr.sessiontypeabs.types.AnalyzedLocalType
 
 data class TypeBuild(
-    val analyzedProtocol: AnalyzedGlobalType<CombinedDomain>,
+    val analyzedProtocol: AnalyzedGlobalType<CombinedAnalysis>,
     val localTypes: Map<Class, AnalyzedLocalType>,
     val condensedTypes: Map<Class, CondensedType>
 )
@@ -27,7 +26,7 @@ class TypeBuildCollection(
             .map(TypeBuild::localTypes)
             .mergeMaps()
 
-    fun mergedGlobalTypes(): Collection<AnalyzedGlobalType<CombinedDomain>> =
+    fun mergedGlobalTypes(): Collection<AnalyzedGlobalType<CombinedAnalysis>> =
         typeBuilds
             .map(TypeBuild::analyzedProtocol)
 

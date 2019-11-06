@@ -3,10 +3,9 @@ package de.ahbnr.sessiontypeabs.cli
 import de.ahbnr.sessiontypeabs.compiler.exceptions.ABSException
 import de.ahbnr.sessiontypeabs.compiler.exceptions.CompilerException
 import de.ahbnr.sessiontypeabs.compiler.exceptions.GlobalTypeException
-import de.ahbnr.sessiontypeabs.compiler.exceptions.LocalTypeException
-import de.ahbnr.sessiontypeabs.types.analysis.exceptions.FinalizationException
-import de.ahbnr.sessiontypeabs.types.analysis.exceptions.ProjectionException
-import de.ahbnr.sessiontypeabs.types.analysis.exceptions.TransferException
+import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.exceptions.ConfigurableAnalysisException
+import de.ahbnr.sessiontypeabs.staticverification.typesystem.exceptions.ModelAnalysisException
+import de.ahbnr.sessiontypeabs.preprocessing.projection.exceptions.ProjectionException
 import de.ahbnr.sessiontypeabs.types.parser.ParserException
 import java.lang.Exception
 
@@ -28,9 +27,10 @@ fun extractUnknownFiles(files: Iterable<String>) =
 
 fun handleCompilerException(exception: CompilerException) {
     val header = when(exception) {
-        is ProjectionException -> "The following error occurred during projection:"
-        is TransferException, is FinalizationException -> "The following error occurred while validating a global type:"
         is ParserException -> "The following error occurred while parsing type specifications:"
+        is ConfigurableAnalysisException -> "The following error occurred while validating a global type:"
+        is ProjectionException -> "The following error occurred during projection:"
+        is ModelAnalysisException -> "The following error occurred during static verification:"
         else -> "The following error occurred during compilation:"
     }
 
@@ -49,11 +49,17 @@ fun handleCompilerException(exception: CompilerException) {
         exception is GlobalTypeException && exception.type.fileContext != null -> {
             val context = exception.type.fileContext!!
 
-            "The error is located in file \"${context.file}\" at (${context.startLine}, ${context.startColumn})."
+            genLocationMsg(context.file, context.startLine, context.startColumn)
+        }
+
+        exception is ConfigurableAnalysisException && exception.type.fileContext != null -> {
+            val context = exception.type.fileContext!!
+
+            genLocationMsg(context.file, context.startLine, context.startColumn)
         }
 
         exception is ParserException ->
-            "The error is located in file ${exception.fileName} at (${exception.line}, ${exception.column})."
+            genLocationMsg(exception.fileName, exception.line, exception.column)
 
         exception is ABSException -> ""
 
@@ -71,3 +77,6 @@ fun handleException(exception: Exception) =
             exception.printStackTrace()
         }
     }
+
+private fun genLocationMsg(fileName: String, line: Int, column: Int) =
+    "The error is located in file \"$fileName\" at line $line, column $column."

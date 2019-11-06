@@ -1,9 +1,9 @@
 package de.ahbnr.sessiontypeabs.compiler
 
-import de.ahbnr.sessiontypeabs.codegen.astmods.ModificationLog
+import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.astmods.ModificationLog
 import de.ahbnr.sessiontypeabs.compiler.exceptions.CompilerException
-import de.ahbnr.sessiontypeabs.types.analysis.AnalyzedGlobalType
-import de.ahbnr.sessiontypeabs.types.analysis.domains.CombinedDomain
+import de.ahbnr.sessiontypeabs.preprocessing.configurableanalysis.analyses.CombinedAnalysis
+import de.ahbnr.sessiontypeabs.types.AnalyzedGlobalType
 import de.ahbnr.sessiontypeabs.types.Class
 
 /**
@@ -11,7 +11,7 @@ import de.ahbnr.sessiontypeabs.types.Class
  *                          global Session Types, but which was not found during
  *                          modification of the ABS model.
  */
-fun checkForMissingParticipants(protocols: Collection<AnalyzedGlobalType<CombinedDomain>>, modLog: ModificationLog) {
+fun checkForMissingParticipants(protocols: Collection<AnalyzedGlobalType<CombinedAnalysis>>, modLog: ModificationLog) {
     val expectedParticipants = protocols
         .fold(emptySet<Class>()) {
                 acc, nextProtocol -> acc union nextProtocol.postState.getParticipants()
@@ -31,7 +31,7 @@ fun checkForMissingParticipants(protocols: Collection<AnalyzedGlobalType<Combine
  * @throws CompilerException iff there is an actor (class) which participates in
  *                           more than one global session type.
  */
-fun ensureProtocolsAreDisjunct(analyzedGlobalTypes: List<AnalyzedGlobalType<CombinedDomain>>) {
+fun ensureProtocolsAreDisjunct(analyzedGlobalTypes: List<AnalyzedGlobalType<CombinedAnalysis>>) {
     val participants = analyzedGlobalTypes.map { it.postState.getParticipants() }
 
     for ((outerIndex, participantSet) in participants.withIndex()) {

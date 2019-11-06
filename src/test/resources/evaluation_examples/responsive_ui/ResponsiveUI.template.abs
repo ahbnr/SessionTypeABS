@@ -1,0 +1,46 @@
+module ResponsiveUI;
+
+data TState = Init | Expect;
+
+interface UII {
+    Int resume(Int result);
+    Unit start(Int v);
+}
+
+interface BackendI {
+    Unit cmp(UII u, Int v);
+}
+
+class Backend implements BackendI {
+    Fut<Int> fResume;
+
+    Unit cmp(UII u, Int v) {
+        Int result = 42*v;
+        this.fResume = u!resume(result);
+    }
+}
+
+class UI (BackendI b) implements UII {
+    TState intern = Init;
+    Fut<Unit> fCmp;
+
+    Int resume(Int v) {
+        // ...
+        return if (intern != Expect)
+          then -1 else 1;
+    }
+
+    Unit start(Int v) {
+        this.fCmp = b!cmp(this, v);
+        {% if set_expect %}
+        intern = Expect;
+        {% endif %}
+    }
+}
+
+{
+    BackendI b = new Backend();
+    UII u = new UI(b);
+
+    await u!start({{start_value}});
+}

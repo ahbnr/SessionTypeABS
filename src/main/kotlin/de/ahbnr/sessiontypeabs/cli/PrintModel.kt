@@ -4,7 +4,7 @@ import de.ahbnr.sessiontypeabs.compiler.buildModel
 import de.ahbnr.sessiontypeabs.compiler.buildTypes
 import de.ahbnr.sessiontypeabs.compiler.parseModel
 import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
-import de.ahbnr.sessiontypeabs.types.analysis.model.VerificationConfig
+import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
 import org.abs_models.backend.prettyprint.DefaultABSFormatter
 
 import picocli.CommandLine.*

@@ -35,10 +35,17 @@ class ParserTests {
     fun fileAndExpectedTypeProvider() = Stream.of(
         Arguments.of(
             "MinimalType.st",
-            GlobalType.Initialization(
-                c = Class("O"),
-                f = Future("f"),
-                m = Method("m")
+            GlobalType.Concatenation(
+                GlobalType.Initialization(
+                    c = Class("O"),
+                    f = Future("f"),
+                    m = Method("m")
+                ),
+                GlobalType.Resolution(
+                    c = Class("O"),
+                    f = Future("f"),
+                    constructor = null
+                )
             )
         ),
         Arguments.of(

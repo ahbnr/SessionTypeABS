@@ -24,3 +24,6 @@ val <T> List<T>.tail: List<T>
 
 val <T> List<T>.head: T
     get() = first()
+
+fun <T> Set<T>.isSubsetOf(rhs: Collection<T>): Boolean =
+    this.all { it in rhs }

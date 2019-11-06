@@ -6,9 +6,8 @@ import de.ahbnr.sessiontypeabs.scenarios.getTracingLib
 import de.ahbnr.sessiontypeabs.tracing.*
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.Method
-import de.ahbnr.sessiontypeabs.types.analysis.model.VerificationConfig
+import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
 import org.apache.commons.io.FileUtils
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.fail
 import java.io.File
 

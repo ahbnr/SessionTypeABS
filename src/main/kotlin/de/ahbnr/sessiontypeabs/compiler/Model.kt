@@ -1,13 +1,11 @@
 package de.ahbnr.sessiontypeabs.compiler
 
-import de.ahbnr.sessiontypeabs.abstoolsmods.oneshotPrettyPrint
-import de.ahbnr.sessiontypeabs.codegen.analysis.findChildren
-import de.ahbnr.sessiontypeabs.codegen.astmods.ModificationLog
-import de.ahbnr.sessiontypeabs.codegen.astmods.enforceSessionTypesOnModel
+import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.astmods.ModificationLog
+import de.ahbnr.sessiontypeabs.dynamicenforcement.codegen.astmods.enforceSessionTypesOnModel
 import de.ahbnr.sessiontypeabs.compiler.exceptions.ABSException
 import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
 import de.ahbnr.sessiontypeabs.types.Class
-import de.ahbnr.sessiontypeabs.types.analysis.model.checkModel
+import de.ahbnr.sessiontypeabs.staticverification.typesystem.checkModel
 import org.abs_models.backend.erlang.ErlangBackend
 import org.abs_models.common.CompilerCondition
 import org.abs_models.frontend.ast.Model
@@ -16,10 +14,7 @@ import org.apache.commons.io.FileUtils
 import java.io.File
 import java.util.*
 import de.ahbnr.sessiontypeabs.types.CondensedType
-import de.ahbnr.sessiontypeabs.types.analysis.model.VerificationConfig
-import org.abs_models.backend.prettyprint.DefaultABSFormatter
-import org.abs_models.frontend.ast.ModuleDecl
-import java.io.PrintWriter
+import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
 
 
 /**

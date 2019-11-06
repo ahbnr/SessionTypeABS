@@ -1,5 +1,6 @@
-// Define a grammar called Hello
 grammar GlobalTypes;
+
+start: globalType EOF ;
 
 globalType:
       init                              # Initialization
@@ -66,7 +67,8 @@ fragment STR_ESC
   ;
 
 pure_exp :
-      qualified_type_identifier ('(' pure_exp_list ')')?   # ConstructorExp
+      qualified_identifier '(' pure_exp_list ')'           # FunctionExp
+    | qualified_type_identifier ('(' pure_exp_list ')')?   # ConstructorExp
     | op=(NEGATION | MINUS) pure_exp                       # UnaryExp
     | l=pure_exp op=(MULT | DIV | MOD) r=pure_exp          # MultExp
     | l=pure_exp op=(PLUS | MINUS) r=pure_exp              # AddExp
@@ -79,7 +81,9 @@ pure_exp :
     | INTLITERAL                                           # IntExp
     | STRINGLITERAL                                        # StringExp
     | 'this'                                               # ThisExp
+    | 'thisDestiny'                                        # ThisDestinyExp
     | 'null'                                               # NullExp
+    | '(' pure_exp ')'                                     # ParenExp
     ;
 
 pure_exp_list : (pure_exp (',' pure_exp)*)? ;

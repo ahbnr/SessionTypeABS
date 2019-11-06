@@ -3,7 +3,7 @@ package de.ahbnr.sessiontypeabs.cli
 import de.ahbnr.sessiontypeabs.compiler.CompilerConfig
 import de.ahbnr.sessiontypeabs.compiler.compile
 import de.ahbnr.sessiontypeabs.dynamicenforcement.EnforcementConfig
-import de.ahbnr.sessiontypeabs.types.analysis.model.VerificationConfig
+import de.ahbnr.sessiontypeabs.staticverification.VerificationConfig
 import picocli.CommandLine.*
 
 @Command(
