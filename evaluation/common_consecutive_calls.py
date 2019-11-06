@@ -1,4 +1,4 @@
-working_dir = 'consecutive_calls'
+working_dir = 'models/complex/consecutive_calls'
 cache_dir = 'cache'
 
 averaging_factor = 10

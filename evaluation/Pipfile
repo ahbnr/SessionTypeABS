@@ -6,10 +6,10 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-jinja2 = "2.10.3"
-pandas = "0.25.2"
-matplotlib = "3.1.1"
-nltk = "3.4.5"
+jinja2 = "~=2.10.3"
+pandas = "~=0.25.2"
+matplotlib = "~=3.1.1"
+nltk = "~=3.4.5"
 
 [requires]
 python_version = "3.7"

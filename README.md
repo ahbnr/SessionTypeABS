@@ -18,7 +18,7 @@ Please make sure that the following dependencies are available on your system:
 Furthermore, it is assumed, that the commands in the following sections are
 executed on the `bash` shell of a linux system.
 
-## Building
+## Building :hammer_and_wrench:
 
 To build the tool, first, a modified version of ABS has to be downloaded and
 be built.
@@ -40,7 +40,7 @@ The SDS-tool can now be found as an executable `.jar` file in `build/libs`.
 We provide a wrapper script `sdstool` which can be invoked instead of the JAR
 file.
 
-## Tests
+## Tests :clipboard:
 
 Issue the command
 ```sh
@@ -78,6 +78,10 @@ gen/erl/run
 
 * `./sdstool printLocalTypes [.st files]` prints the local session types
   projected from the given global ones.
+
+## Evaluation Scripts
+
+See `evalutation/README.md`
 
 ## License
 

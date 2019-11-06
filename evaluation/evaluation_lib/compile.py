@@ -25,4 +25,4 @@ def compileModel(
     if no_static_checks:
         options += ["--noStaticChecks"]
 
-    subprocess.run(["../sdstool.sh", "compile", *options, *args])
+    subprocess.run(["../../../../sdstool", "compile", *options, *args])

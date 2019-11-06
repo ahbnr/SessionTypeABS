@@ -6,19 +6,19 @@ from evaluation_lib.compile import compileModel
 
 num_executions = 100
 
-answer = input('Evaluate without enforcement? [Y/N] ')
+answer = input('Evaluate with enforcement? [Y/N] ')
 
 source_files = ['GradingSystem.abs']
 
-if answer == 'N':
+if answer == 'Y':
     source_files += ['GradingSystem.st']
-elif answer == 'Y':
+elif answer == 'N':
     pass
 else:
     print('Cant parse answer.')
     exit(-1)
 
-os.chdir('grading_system')
+os.chdir('models/complex/grading_system')
 
 compileModel(source_files)
 
