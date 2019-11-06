@@ -3,7 +3,8 @@
 This folder contains the ABS models and scripts which have been used to conduct
 the experiments of the "Evaluation" chapter of my thesis.
 For the instructions in this file, we assume the SDS-tool has already been
-built, see the `README.md` file in the directory above.
+built, see the `README.md` file in the root of the SessionTypeABS source
+repository.
 
 The first three models of the section can be directly checked and compiled with
 the SDS-tool without much effort. See section "Simple Models" below.
