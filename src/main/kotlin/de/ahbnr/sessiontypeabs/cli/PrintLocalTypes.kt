@@ -18,7 +18,7 @@ class PrintLocalTypes : Runnable {
 
             println(
                 typeBuild.mergedLocalTypes().map { (actor, localType) ->
-                    "${actor.value}:\n$localType"
+                    "${actor.value}:\n${localType.type}"
                 }
                     .intersperse("\n\n")
             )

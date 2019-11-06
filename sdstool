@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Wrapper script to run the JAR produced by building this project
+
+
+# Finding absolute path to this script
+# Code by https://stackoverflow.com/a/630387, user vladr
+SCRIPT_PATH="`dirname \"$0\"`"              # relative
+SCRIPT_PATH="`( cd \"$SCRIPT_PATH\" && pwd )`"  # absolutized and normalized
+if [ -z "$SCRIPT_PATH" ] ; then
+  # error; for some reason, the path is not accessible
+  # to the script (e.g. permissions re-evaled after suid)
+  echo 'can not determine path to sdstool.sh script'
+  exit 1  # fail
+fi
+
+JAR_PATH="$SCRIPT_PATH/build/libs/sessiontypeabs-1.0-SNAPSHOT-all.jar"
+
+if [ ! -f "$JAR_PATH" ]; then
+   echo "Could not find the JAR file. Did you compile the project with ./gradlew shadowJar ?"
+   echo "Also: This script can only find the JAR file, if it is located in the root folder of the tool repository, so please do not move it."
+fi
+
+chmod +x "$JAR_PATH"
+java -jar "$JAR_PATH" $@
