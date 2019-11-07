@@ -78,6 +78,10 @@ Next, all necessary python dependencies need to be installed by running
 pipenv install
 ```
 in the `evaluation` folder.
+You should ensure that all python files are executable:
+```sh
+chmod +x *.py
+```
 
 The experiments which conduct performance measurements will save the collected
 data as `.csv` files in the `cache` subfolder of the experiment.
@@ -85,6 +89,24 @@ The content of these `.csv` files corresponds to the data tables in my thesis.
 The plots created from this data can be found in the same subfolder as `.pdf`
 files.
 
+IF the experiments fail, you might have a different version of perf or GNU time
+installed, or your system does not allow normal users to use perf.
+You can test for the latter case by executing the following:
+
+```sh
+perf stat ls
+```
+
+If the command fails to collect and present measurements, you can try to execute
+the following command as a super user to give normal users the permission to
+use perf:
+
+```sh
+echo -1 > /proc/sys/kernel/perf_event_paranoid
+```
+
+Note, that you will need to delete the `cache` folder before you can rerun the
+failed experiment.
 
 ### Grading System
 

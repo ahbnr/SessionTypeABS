@@ -1,6 +1,6 @@
 package de.ahbnr.sessiontypeabs.staticverification
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.CompilerException
+import de.ahbnr.sessiontypeabs.compiler.exceptions.CompilerException
 import de.ahbnr.sessiontypeabs.head
 import de.ahbnr.sessiontypeabs.types.Class
 import de.ahbnr.sessiontypeabs.types.GlobalType

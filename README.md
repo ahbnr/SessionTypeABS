@@ -15,6 +15,7 @@ Please make sure that the following dependencies are available on your system:
 * Kotlin compiler version 1.3.50
 * Erlang version 22.1
 * OpenJDK 11
+* Git version 2.24.0
 
 Furthermore, it is assumed, that the commands in the following sections are
 executed on the `bash` shell of a linux system.
