@@ -284,8 +284,8 @@ private fun parsePostCondition(postCondition: GlobalTypesParser.Pure_expContext,
         override fun visitThisExp(ctx: GlobalTypesParser.ThisExpContext) =
             ThisExp()
 
-        override fun visitThisDestinyExp(ctx: GlobalTypesParser.ThisDestinyExpContext) =
-            ThisDestinyExp()
+        override fun visitDestinyExp(ctx: GlobalTypesParser.DestinyExpContext) =
+            DestinyExp()
 
         override fun visitNullExp(ctx: GlobalTypesParser.NullExpContext) =
             NullExp()

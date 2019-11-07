@@ -47,7 +47,7 @@ type Register = Maybe<Fut<Any>>;
 
 def Maybe<Process> matchRegister(Register r, List<Process> queue) =
   case r {
-    Just(f) => safeHead(filter((Process p) => destiny(p) == f)(queue));
+    Just(f) => safeHead(filter((Process p) => destinyOf(p) == f)(queue));
     _ => Nothing;
   };
 
@@ -55,7 +55,7 @@ def Maybe<Process> matchRegister(Register r, List<Process> queue) =
  * Decides, whether the future of the given process is not stored in any of the given registers
  */
 def Bool notStoredInRegister(Set<Register> allRegisters, Process p) =
-    !contains(allRegisters, Just(destiny(p)));
+    !contains(allRegisters, Just(destinyOf(p)));
 
 def Bool isNewInvocation(Set<Register> allRegisters, Process p) = notStoredInRegister(allRegisters, p);
 
@@ -69,7 +69,7 @@ def Maybe<Process> matchNamesOrRegisters(Set<String> whitelist, Set<Register> re
   safeHead(
     filter((Process p) =>
          (isNewInvocation(allRegisters, p) && contains(whitelist, method(p)))
-      || contains(registers, Just(destiny(p)))) (queue)
+      || contains(registers, Just(destinyOf(p)))) (queue)
   );
 
 /**

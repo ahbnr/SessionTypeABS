@@ -18,7 +18,7 @@ class ComputationServer (ServiceDeskI d, StudentI s) implements ComputationServe
     uses Traceable;
 
     Unit compute() {
-        traceStore = traceInvocation(traceStore, "compute", thisDestiny);
+        traceStore = traceInvocation(traceStore, "compute", destiny);
         Int grade = random(6) + 1;
 
         publishTask = d!publish(grade);
@@ -44,14 +44,14 @@ class ServiceDesk implements ServiceDeskI {
     uses Traceable;
 
     Unit publish(Int grade) {
-        traceStore = traceInvocation(traceStore, "publish", thisDestiny);
+        traceStore = traceInvocation(traceStore, "publish", destiny);
         traceStore = markMethodCompleted(traceStore, "publish");
 
         this.grade = Just(grade);
     }
 
     String request() {
-        traceStore = traceInvocation(traceStore, "request", thisDestiny);
+        traceStore = traceInvocation(traceStore, "request", destiny);
         traceStore = markMethodCompleted(traceStore, "request");
 
         return "This is your grade: " + toString(fromJust(grade));
@@ -73,7 +73,7 @@ class Student (ServiceDeskI d) implements StudentI {
     uses Traceable;
 
     Unit announce() {
-        traceStore = traceInvocation(traceStore, "announce", thisDestiny);
+        traceStore = traceInvocation(traceStore, "announce", destiny);
 
         println("Student: Got notification that my grades are complete!");
 
@@ -81,7 +81,7 @@ class Student (ServiceDeskI d) implements StudentI {
         this.requestTask = d!request();
 
         await this.requestTask?;
-        traceStore = traceReactivation(traceStore, "announce", thisDestiny);
+        traceStore = traceReactivation(traceStore, "announce", destiny);
 
         String gradeReport = this.requestTask.get;
 

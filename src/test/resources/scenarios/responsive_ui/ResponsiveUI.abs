@@ -26,7 +26,7 @@ class S implements SI {
     uses Traceable;
 
     Int cmp(Int i) {
-        traceStore = traceInvocation(traceStore, "cmp", thisDestiny);
+        traceStore = traceInvocation(traceStore, "cmp", destiny);
 
         Int result = i;
 
@@ -48,11 +48,11 @@ class I (SI s) implements II {
     uses Traceable;
 
     Unit cmp(UI u, Int dat) {
-        traceStore = traceInvocation(traceStore, "cmp", thisDestiny);
+        traceStore = traceInvocation(traceStore, "cmp", destiny);
 
         cmpSTask = s!cmp(dat);
         await cmpSTask?;
-        traceStore = traceReactivation(traceStore, "cmp", thisDestiny);
+        traceStore = traceReactivation(traceStore, "cmp", destiny);
 
         Int result = cmpSTask.get;
 
@@ -75,7 +75,7 @@ class U (II i) implements UI {
     uses Traceable;
 
     Int resume(Int x) {
-        traceStore = traceInvocation(traceStore, "resume", thisDestiny);
+        traceStore = traceInvocation(traceStore, "resume", destiny);
 
         Int result =
             if (intern != Expect) then
@@ -89,7 +89,7 @@ class U (II i) implements UI {
     }
 
     Unit start(Int j) {
-        traceStore = traceInvocation(traceStore, "start", thisDestiny);
+        traceStore = traceInvocation(traceStore, "start", destiny);
 
         cmpITask = i!cmp(this, j);
         intern = Expect;

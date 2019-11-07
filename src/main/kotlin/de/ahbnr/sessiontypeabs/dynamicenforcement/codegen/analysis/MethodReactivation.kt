@@ -28,7 +28,7 @@ import org.abs_models.frontend.ast.*
  *           and the method must be examined for futher reactivation points and
  *           async calls.
  *           If a method was called synchronously can always be checked during
- *           reactivation transitions by comparing `thisDestiny` to the registers.
+ *           reactivation transitions by comparing `destiny` to the registers.
  *       (2) Callee object is `this`. If the surrounding class implements an
  *           interface, case (1) can be applied.
  *           If not then the class is irrelevant regarding SessionTypes anyway,

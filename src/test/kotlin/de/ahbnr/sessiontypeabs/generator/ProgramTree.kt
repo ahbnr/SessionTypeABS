@@ -106,11 +106,11 @@ fun buildFutureIdStore() =
 """Map<Fut<Any>, Int> futStore = map[];
 Int futCounter = 0;"""
 
-fun registerThisDestiny() = """this.futStore = insert(this.futStore, Pair(thisDestiny, this.futCounter));
+fun registerThisDestiny() = """this.futStore = insert(this.futStore, Pair(destiny, this.futCounter));
 this.futCounter = this.futCounter + 1;
 """
 
-fun retrieveDestinyString() = "toString(lookupUnsafe(this.futStore, thisDestiny))"
+fun retrieveDestinyString() = "toString(lookupUnsafe(this.futStore, destiny))"
 
 fun announceInvocation(callee: Class, method: Method) =
 """${registerThisDestiny()}

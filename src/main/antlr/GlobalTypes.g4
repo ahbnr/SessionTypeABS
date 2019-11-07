@@ -81,7 +81,7 @@ pure_exp :
     | INTLITERAL                                           # IntExp
     | STRINGLITERAL                                        # StringExp
     | 'this'                                               # ThisExp
-    | 'thisDestiny'                                        # ThisDestinyExp
+    | 'destiny'                                            # DestinyExp
     | 'null'                                               # NullExp
     | '(' pure_exp ')'                                     # ParenExp
     ;

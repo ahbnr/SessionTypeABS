@@ -27,7 +27,7 @@ class Callee implements CalleeI {
     uses Traceable;
 
     Unit a() {
-        traceStore = traceInvocation(traceStore, "a", thisDestiny);
+        traceStore = traceInvocation(traceStore, "a", destiny);
 
         caller!callback2();
         // Busy waiting
@@ -51,7 +51,7 @@ class Caller (CalleeI callee) implements CallerI {
     uses Traceable;
 
     Unit main() {
-        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+        traceStore = traceInvocation(traceStore, "main", destiny);
 
         List<Fut<Unit>> futureList = Nil;
 
@@ -68,19 +68,19 @@ class Caller (CalleeI callee) implements CallerI {
 
         foreach(aTask in futureList) {
             await aTask?;
-            traceStore = traceReactivation(traceStore, "main", thisDestiny);
+            traceStore = traceReactivation(traceStore, "main", destiny);
         }
 
         traceStore = markMethodCompleted(traceStore, "main");
     }
 
     Unit callback1() {
-        traceStore = traceInvocation(traceStore, "callback1", thisDestiny);
+        traceStore = traceInvocation(traceStore, "callback1", destiny);
         traceStore = markMethodCompleted(traceStore, "callback1");
     }
 
     Unit callback2() {
-        traceStore = traceInvocation(traceStore, "callback2", thisDestiny);
+        traceStore = traceInvocation(traceStore, "callback2", destiny);
         traceStore = markMethodCompleted(traceStore, "callback2");
     }
 }

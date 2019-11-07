@@ -26,7 +26,7 @@ class Client (PrinterI printer) implements ClientI {
     TraceStore traceStore = initialTraceStore("Client", map[]);
 
     Unit main() {
-        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+        traceStore = traceInvocation(traceStore, "main", destiny);
 
         println("Client: Started!");
 
@@ -40,7 +40,7 @@ class Client (PrinterI printer) implements ClientI {
 
             pageRequest = printer!preparePage();
             await this.pageRequest?;
-            traceStore = traceReactivation(traceStore, "main", thisDestiny);
+            traceStore = traceReactivation(traceStore, "main", destiny);
 
             println("Client: Printer returned a status code.");
             StatusMsg status = this.pageRequest.get;
@@ -50,7 +50,7 @@ class Client (PrinterI printer) implements ClientI {
                     printJob = printer!print(nth(pages, i));
                     finalization = printer!finishPage();
                     await this.finalization?;
-                    traceStore = traceReactivation(traceStore, "main", thisDestiny);
+                    traceStore = traceReactivation(traceStore, "main", destiny);
 
                     println("Client: Printer confirms that page no. " + toString(i) + " has been printed.");
                 }
@@ -78,7 +78,7 @@ class Printer implements PrinterI {
     TraceStore traceStore = initialTraceStore("Printer", map[]);
 
     StatusMsg preparePage() {
-        traceStore = traceInvocation(traceStore, "preparePage", thisDestiny);
+        traceStore = traceInvocation(traceStore, "preparePage", destiny);
 
         println("Printer: Got request to prepare a page to print.");
 
@@ -99,14 +99,14 @@ class Printer implements PrinterI {
     }
 
     Unit print(String page) {
-        traceStore = traceInvocation(traceStore, "print", thisDestiny);
+        traceStore = traceInvocation(traceStore, "print", destiny);
 
         println("Printer: Got request to print a page.");
         println(page);
     }
 
     Unit finishPage() {
-        traceStore = traceInvocation(traceStore, "finishPage", thisDestiny);
+        traceStore = traceInvocation(traceStore, "finishPage", destiny);
 
         println("Printer: Got ordered to finalize printing a page");
     }

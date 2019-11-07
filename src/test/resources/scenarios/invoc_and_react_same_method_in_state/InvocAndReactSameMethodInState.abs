@@ -23,21 +23,21 @@ class P (QI q) implements P {
     Fut<Unit> fb;
 
     Unit m(Int branch) {
-        traceStore = traceInvocation(traceStore, "branch", thisDestiny);
+        traceStore = traceInvocation(traceStore, "branch", destiny);
 
         case (branch) {
             0 => {
                 this.fa = q!ma();
                 await this.fa?;
 
-                traceStore = traceReactivation(traceStore, "m", thisDestiny);
+                traceStore = traceReactivation(traceStore, "m", destiny);
             }
 
             1 => {
                 this.fb = q!mb();
                 await this.fb?;
 
-                traceStore = traceReactivation(traceStore, "m", thisDestiny);
+                traceStore = traceReactivation(traceStore, "m", destiny);
             }
 
             2 => skip

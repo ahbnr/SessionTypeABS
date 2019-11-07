@@ -27,7 +27,7 @@ class P (QI qref) implements PI {
     uses Traceable;
 
     Unit m(Int branch) {
-        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+        traceStore = traceInvocation(traceStore, "m", destiny);
 
         case (branch) {
             0 => {
@@ -54,11 +54,11 @@ class Q (RI r) implements QI {
     uses Traceable;
 
     Unit m() {
-        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+        traceStore = traceInvocation(traceStore, "m", destiny);
 
         this.fb2 = r!m();
         await this.fb2?;
-        traceStore = traceReactivation(traceStore, "m", thisDestiny);
+        traceStore = traceReactivation(traceStore, "m", destiny);
 
         traceStore = markMethodCompleted(traceStore, "m");
     }
@@ -73,7 +73,7 @@ class R implements RI {
     uses Traceable;
 
     Unit m() {
-        traceStore = traceInvocation(traceStore, "m", thisDestiny);
+        traceStore = traceInvocation(traceStore, "m", destiny);
         traceStore = markMethodCompleted(traceStore, "m");
     }
 }

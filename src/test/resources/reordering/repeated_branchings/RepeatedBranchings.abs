@@ -23,17 +23,17 @@ class Callee implements CalleeI {
     uses Traceable;
 
     Unit a() {
-        traceStore = traceInvocation(traceStore, "a", thisDestiny);
+        traceStore = traceInvocation(traceStore, "a", destiny);
         traceStore = markMethodCompleted(traceStore, "a");
     }
 
     Unit b() {
-        traceStore = traceInvocation(traceStore, "b", thisDestiny);
+        traceStore = traceInvocation(traceStore, "b", destiny);
         traceStore = markMethodCompleted(traceStore, "b");
     }
 
     Unit c() {
-        traceStore = traceInvocation(traceStore, "c", thisDestiny);
+        traceStore = traceInvocation(traceStore, "c", destiny);
         traceStore = markMethodCompleted(traceStore, "c");
     }
 }
@@ -51,7 +51,7 @@ class Caller (CalleeI callee) implements CallerI {
     uses Traceable;
 
     Unit main() {
-        traceStore = traceInvocation(traceStore, "main", thisDestiny);
+        traceStore = traceInvocation(traceStore, "main", destiny);
 
         Int times = rounds();
 

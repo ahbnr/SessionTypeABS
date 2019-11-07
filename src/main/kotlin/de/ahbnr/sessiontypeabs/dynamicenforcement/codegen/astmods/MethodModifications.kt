@@ -199,7 +199,7 @@ fun introducePostConditionAssertionsForInvocREvs(methodImpl: MethodImpl, invocRE
  * Example of generated code:
  *
  * ```
- * r0 = thisDestiny;
+ * r0 = destiny;
  * q = 2;
  * ```
  *
@@ -219,7 +219,7 @@ private fun genInvocREvTransitionCode(transition: Transition): Block {
         AssignStmt(
             List(), //Annotations
             FieldUse(registerIdentifier(verb.register)),
-            justC(ThisDestinyExp())
+            justC(DestinyExp())
         )
 
     return Block(
@@ -242,11 +242,11 @@ private fun genInvocREvTransitionCode(transition: Transition): Block {
  * ```
  * case q {
  *   0 => {
- *      r0 = thisDestiny;
+ *      r0 = destiny;
  *      q = 1;
  *   }
  *   1 => {
- *      r1 = thisDestiny;
+ *      r1 = destiny;
  *      q = 2;
  *   }
  *   _ => {
@@ -296,7 +296,7 @@ private fun genInvocREvTransitionSwitchCode(transitions: Set<Transition>) =
  * Example of generated code_
  *
  * ```
- * if (q == 1 && Just(thisDestiny) == r0) {
+ * if (q == 1 && Just(destiny) == r0) {
  *   q = 2;
  * }
  *
@@ -316,7 +316,7 @@ private fun genReactivationStateTransition(t: Transition, elseCase: Stmt? = null
         AndBoolExp(
             EqExp(FieldUse(stateFieldIdentifier), IntLiteral(t.q1.toString())),
             EqExp(
-                justC(ThisDestinyExp()),
+                justC(DestinyExp()),
                 FieldUse(registerIdentifier(t.verb.register))
             )
         ),
@@ -328,7 +328,7 @@ private fun genReactivationStateTransition(t: Transition, elseCase: Stmt? = null
         elseCase
     )
         /* Result:
-          if (q == X && Just(thisDestiny) == rI) { // TODO: Aussagekräftig genug? Werden Register je geleert? Vielleicht relevant nicht im Protokoll genannte Funktionen auch aufgerufen werden können
+          if (q == X && Just(destiny) == rI) { // TODO: Aussagekräftig genug? Werden Register je geleert? Vielleicht relevant nicht im Protokoll genannte Funktionen auch aufgerufen werden können
             q = Y;
           }
         */
