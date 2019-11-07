@@ -2,7 +2,8 @@
 
 This tool complements the ABS modeling language with support for session types.
 It can statically verify ABS models against session types and modifies them to
-enforce specified behavior, which can not be statically guaranteed.
+enforce those parts of the specified behavior, which can not be statically
+guaranteed.
 
 I developed this tool during my bachelor thesis. Please consult my thesis for
 more information on the tool. I might link the thesis here at some future point.
@@ -76,7 +77,7 @@ gen/erl/run
 * `./sdstool printGlobalTypes [.st files]` parses the given session type files
   and outputs them again.
 
-* `./sdstool printLocalTypes [.st files]` prints the local session types
+* `./sdstool printLocalTypes [.st files]` prints the object local session types
   projected from the given global ones.
 
 ## Evaluation Scripts
@@ -85,7 +86,7 @@ See `evalutation/README.md`
 
 ## License
 
-See License.txt.
+See LICENSE.txt.
 This license only applies to the files belonging to this project, not to
 abstools or the other libraries being used.
 

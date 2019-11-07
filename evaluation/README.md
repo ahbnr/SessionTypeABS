@@ -6,11 +6,12 @@ For the instructions in this file, we assume the SDS-tool has already been
 built, see the `README.md` file in the root of the SessionTypeABS source
 repository.
 
-The first three models of the section can be directly checked and compiled with
-the SDS-tool without much effort. See section "Simple Models" below.
+The first three models of the evaluation chapter can be directly checked and
+compiled with the SDS-tool without much effort. See section "Simple Models"
+below.
 
 For the more complex evaluations and performance measurements we employ python
-scripts, see the section "Complex Experiments".
+scripts, see the section "Complex Experiments" of this file.
 
 ## Simple Models
 
@@ -24,7 +25,7 @@ cd models/simple/grading_system
 gen/erl/run
 ```
 
-If you want to test out, how often the invocation order of methods is violated,
+If you want to test out, how often the invocation order of methods is violated
 if dynamic enforcement is not applied, please see the subsection
 `Grading System` in the `Complex Experiments` section of this file.
 
@@ -39,7 +40,7 @@ cd models/simple/responsive_ui
 gen/erl/run
 ```
 
-If you want to test out, how the model behaves, if the specified postconditions
+If you want to test out, how the model behaves if the specified postconditions
 are violated, please see the subsection
 `Heap Communication Example` in the `Complex Experiments` section of this file.
 
@@ -67,7 +68,7 @@ experiments:
 * perf 5.3
 * GNU time 1.9
 
-For Arch Linux you can run the following command to install these dependencies:
+For Arch Linux, you can run the following command to install these dependencies:
 ```sh
 sudo pacman -S python python-pipenv perf time
 ```
@@ -149,7 +150,7 @@ rm -r models/complex/consecutive_calls/cache
 ### Performance Evaluation Example 2
 
 The script `notification_service_perf.py` will conduct all experiments of
-of the second performance evaluation experiment of the thesis:
+the second performance evaluation experiment of the thesis:
 
 ```sh
 pipenv run ./notification_service_perf.py
