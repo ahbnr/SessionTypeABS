@@ -89,6 +89,8 @@ The content of these `.csv` files corresponds to the data tables in my thesis.
 The plots created from this data can be found in the same subfolder as `.pdf`
 files.
 
+### Troubleshooting
+
 IF the experiments fail, you might have a different version of perf or GNU time
 installed, or your system does not allow normal users to use perf.
 You can test for the latter case by executing the following:
@@ -107,6 +109,9 @@ echo -1 > /proc/sys/kernel/perf_event_paranoid
 
 Note, that you will need to delete the `cache` folder before you can rerun the
 failed experiment.
+
+There has also been one case, where the scripts could'nt read the output of
+perf since its output was formatted differently due to locale settings.
 
 ### Grading System
 

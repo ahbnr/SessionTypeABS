@@ -3,9 +3,9 @@ import subprocess
 import re
 from typing import Iterable
 
-perf_real_time_regex = re.compile("(?P<seconds>\d+\.\d+) seconds time elapsed")
-perf_user_time_regex = re.compile("(?P<seconds>\d+\.\d+) seconds user")
-perf_sys_time_regex = re.compile("(?P<seconds>\d+\.\d+) seconds sys")
+perf_real_time_regex = re.compile("(?P<seconds>\d+[\.,]\d+) seconds time elapsed")
+perf_user_time_regex = re.compile("(?P<seconds>\d+[\.,]\d+) seconds user")
+perf_sys_time_regex = re.compile("(?P<seconds>\d+[\.,]\d+) seconds sys")
 
 time_stats_regex = re.compile("TimeStats\((?P<stats>[^)]+)\)")
 
@@ -19,9 +19,9 @@ def runTime(*args):
 
     time_result = time_stats_regex.search(stderr).group('stats').split(',')
     return {
-            "real": float(time_result[0]),
-            "sys": float(time_result[1]),
-            "user": float(time_result[2]),
+            "real": float(time_result[0].replace(',', '.')),
+            "sys": float(time_result[1].replace(',', '.')),
+            "user": float(time_result[2].replace(',', '.')),
             "maximum_rss": float(time_result[3]),
             "stdout": stdout
     }
@@ -31,9 +31,9 @@ def runPerf(*args):
     stderr = proc.stderr.decode()
     stdout = proc.stdout.decode()
     return {
-        'real': float(perf_real_time_regex.search(stderr).group('seconds')),
-        'user': float(perf_user_time_regex.search(stderr).group('seconds')),
-        'sys': float(perf_sys_time_regex.search(stderr).group('seconds')),
+        'real': float(perf_real_time_regex.search(stderr).group('seconds').replace(',', '.')),
+        'user': float(perf_user_time_regex.search(stderr).group('seconds').replace(',', '.')),
+        'sys': float(perf_sys_time_regex.search(stderr).group('seconds').replace(',', '.')),
         'stdout': stdout
     }
 
