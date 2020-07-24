@@ -6,7 +6,9 @@ enforce those parts of the specified behavior, which can not be statically
 guaranteed.
 
 I developed this tool during my bachelor thesis. Please consult my thesis for
-more information on the tool. I might link the thesis here at some future point.
+more information on the tool.
+Link to thesis: [Link](thesis/thesis_final_pdfa.pdf)
+(This is the first version as it had been originally submitted for review.)
 
 ## Prerequisites
 
@@ -55,6 +57,7 @@ to run all tests.
 The following command
 
 * statically verifies an ABS model against the given session types
+  * (see [link](session_type_syntax.md) for more information on the syntax of `.st` session type specification files)
 * applies our dynamic enforcement techniques to it
 * compiles the modified model to Erlang
 
